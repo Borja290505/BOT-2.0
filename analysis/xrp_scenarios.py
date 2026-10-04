@@ -220,18 +220,18 @@ for v, lab in RES:
     ax.axhline(v, color="#e34948", lw=0.8, ls=(0, (4, 3)), alpha=0.7)
     ax.text(x0, v, f" {lab} {v:.2f}", va="bottom", fontsize=8, color="#b8302f")
 # Escenarios: barras de rango al final del horizonte
-xe = fut[-1] + pd.Timedelta(days=9)
+xe = fut[-1] + pd.Timedelta(days=15)
 for k, (name, s) in enumerate(SC.items()):
-    xx = xe + pd.Timedelta(days=4 * k)
+    xx = xe + pd.Timedelta(days=9 * k)
     ax.plot([xx, xx], [s["lo"], s["hi"]], color=s["col"], lw=6, solid_capstyle="round")
     ax.text(xx + pd.Timedelta(days=1.2), (s["lo"] + s["hi"]) / 2, f"{name}\n{s['p']} %\n{s['lo']:.2f}–{s['hi']:.2f}",
             fontsize=8, va="center", color="#0b0b0b")
     if s.get("inv"):
         ax.plot([xx - pd.Timedelta(days=1.2), xx + pd.Timedelta(days=1.2)], [s["inv"]] * 2, color=s["col"], lw=1.5)
-        ax.text(xx, s["inv"], "✕ inval.", fontsize=7, ha="center", va="bottom", color=s["col"])
+        ax.text(xx, s["inv"], f"invalida {s['inv']:.2f}", fontsize=7, ha="center", va="bottom", color=s["col"])
 ax.axvline(last_date, color="#52514e", lw=0.8)
 ax.text(last_date, ax.get_ylim()[1], f" Hoy {last_date:%d-%m-%Y}\n cierre {P0:.4f} $", va="top", fontsize=8, color="#52514e")
-ax.set_xlim(hx.index[0], xe + pd.Timedelta(days=22))
+ax.set_xlim(hx.index[0], xe + pd.Timedelta(days=30))
 ax.xaxis.set_major_formatter(mdates.DateFormatter("%b-%y"))
 ax.grid(axis="y", color="#e6e5e0", lw=0.6); ax.set_axisbelow(True)
 for s_ in ["top", "right"]: ax.spines[s_].set_visible(False)
@@ -243,9 +243,9 @@ fig.text(0.01, 0.01,
          f"Datos: {src} (API pública), {res['inicio']}→{res['ultima_vela_cerrada']}. Cono: 40.000 trayectorias (t-Student ν=3,5 + bootstrap por bloques de 5 d), "
          f"σ diaria {res['sigma_diaria_modelo_pct']:.2f} %, sin deriva.\nBacktest {bt_t['desde']}→{bt_t['hasta']}: dentro de P5–P95 "
          f"{bt_t['dentro_P5_P95_pct']:.0f} % (t) / {bt_b['dentro_P5_P95_pct']:.0f} % (boot) vs 90 % ideal; P25–P75 {bt_t['dentro_P25_P75_pct']:.0f} % / "
-         f"{bt_b['dentro_P25_P75_pct']:.0f} % vs 50 %. Niveles: pivotes propios + análisis citados. Escenarios: probabilidad subjetiva. Generado {pd.Timestamp.utcnow():%Y-%m-%d}.",
+         f"{bt_b['dentro_P25_P75_pct']:.0f} % vs 50 %. Niveles: pivotes propios + análisis citados. Escenarios: probabilidad subjetiva. Generado {pd.Timestamp.now('UTC'):%Y-%m-%d}.",
          fontsize=7.2, color="#52514e")
-ax.legend(loc="upper left", fontsize=8, frameon=False, ncol=2, bbox_to_anchor=(0, 0.93))
+ax.legend(loc="upper left", fontsize=8, frameon=False, ncol=2, bbox_to_anchor=(0.08, 0.86))
 fig.tight_layout(rect=(0, 0.05, 1, 1))
 fig.savefig(os.path.join(OUTDIR, "xrp_escenarios_30d.png"))
 
