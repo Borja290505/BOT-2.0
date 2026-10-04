@@ -1,0 +1,23 @@
+name: fetch-crypto-data
+on:
+  push:
+    branches: [claude/crypto-asset-scenario-analysis-tzf4se]
+    paths: [analysis/fetch_data.py, .github/workflows/fetch-crypto-data.yml]
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  fetch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: python analysis/fetch_data.py
+      - run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add analysis/data
+          git commit -m "Datos de mercado descargados ($(date -u +%F))" || echo "sin cambios"
+          git push
