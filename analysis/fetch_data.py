@@ -25,8 +25,8 @@ def bitstamp(pair, start=1514764800):
         time.sleep(1)
     return rows
 
-def kraken(pair):
-    d = get(f"https://api.kraken.com/0/public/OHLC?pair={pair}&interval=1440")
+def kraken(pair, interval=1440):
+    d = get(f"https://api.kraken.com/0/public/OHLC?pair={pair}&interval={interval}")
     key = [k for k in d["result"] if k != "last"][0]
     return {int(c[0]): [c[1], c[2], c[3], c[4], c[6]] for c in d["result"][key]}
 
@@ -46,6 +46,11 @@ jobs = [
     ("bitstamp_xlmusd_1d.csv", lambda: bitstamp("xlmusd")),
     ("bitstamp_adausd_1d.csv", lambda: bitstamp("adausd", 1609459200)),
     ("kraken_xrpusd_1d.csv", lambda: kraken("XRPUSD")),
+    ("kraken_xrpusd_4h.csv", lambda: kraken("XRPUSD", 240)),
+    ("kraken_solusd_1d.csv", lambda: kraken("SOLUSD")),
+    ("kraken_xlmusd_1d.csv", lambda: kraken("XLMUSD")),
+    ("kraken_adausd_1d.csv", lambda: kraken("ADAUSD")),
+    ("kraken_hbarusd_1d.csv", lambda: kraken("HBARUSD")),
 ]
 for name, fn in jobs:
     try:
