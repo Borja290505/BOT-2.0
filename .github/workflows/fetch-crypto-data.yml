@@ -3,9 +3,6 @@ on:
   workflow_dispatch:            # botón "Run workflow" (solo aparece cuando este archivo está en main)
   schedule:
     - cron: "17 6 * * *"        # cada día a las 06:17 UTC (solo funciona desde main)
-  push:
-    branches: [claude/crypto-asset-scenario-analysis-tzf4se]
-    paths: [analysis/*.py, analysis/requirements.txt, .github/workflows/fetch-crypto-data.yml]
 permissions:
   contents: write
 jobs:
@@ -49,6 +46,30 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add analysis/data analysis/output
-          git commit -m "Análisis XRP actualizado ($(date -u +%F))" || exit 0
-          git pull --rebase -X theirs origin "$GITHUB_REF_NAME"
-          git push origin HEAD:"$GITHUB_REF_NAME"
+          if git commit -m "Análisis XRP actualizado ($(date -u +%F))"; then
+            git pull --rebase -X theirs origin "$GITHUB_REF_NAME"
+            git push origin HEAD:"$GITHUB_REF_NAME"
+          fi
+      - name: Preparar la página web
+        run: |
+          mkdir -p _site
+          cp analysis/web/index.html _site/
+          cp analysis/output/resultados_v2.json analysis/output/backtest_v1_vs_v2.json _site/
+          cp analysis/output/xrp_escenarios_30d_v2.png analysis/output/xrp_calibracion_v1_vs_v2.png _site/
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
+  # Publica la página en GitHub Pages (requiere Settings → Pages → Source: GitHub Actions)
+  web:
+    needs: analisis
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - id: deploy
+        uses: actions/deploy-pages@v4

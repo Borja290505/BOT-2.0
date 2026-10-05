@@ -1,0 +1,149 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>XRP Escenarios</title>
+<style>
+  :root {
+    --bg: #f6f5f1; --card: #ffffff; --ink: #0b0b0b; --muted: #52514e; --line: #e6e5e0; --track: #efeee9;
+    --bear: #e34948; --base: #2a78d6; --bull: #1baf7a; --warn-bg: #fff6e0; --warn-ink: #6b4b00;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #121211; --card: #1a1a19; --ink: #ffffff; --muted: #c3c2b7; --line: #2e2e2c; --track: #2a2a28;
+      --bear: #e66767; --base: #3987e5; --bull: #199e70; --warn-bg: #2b2412; --warn-ink: #f0d58a;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #121211; --card: #1a1a19; --ink: #ffffff; --muted: #c3c2b7; --line: #2e2e2c; --track: #2a2a28;
+    --bear: #e66767; --base: #3987e5; --bull: #199e70; --warn-bg: #2b2412; --warn-ink: #f0d58a;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink);
+         font: 15px/1.45 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+  .wrap { max-width: 1240px; margin: 0 auto; padding: 20px 16px 40px; }
+  header { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 16px; margin-bottom: 16px; }
+  h1 { font-size: 26px; margin: 0; }
+  .price { font-size: 26px; font-variant-numeric: tabular-nums; }
+  .meta { color: var(--muted); font-size: 13px; }
+  .grid { display: grid; grid-template-columns: 360px 1fr; gap: 16px; }
+  @media (max-width: 900px) { .grid { grid-template-columns: 1fr; } .grid > div:last-child { order: -1; } }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 14px 16px; margin-bottom: 16px; }
+  h2 { font-size: 12px; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); margin: 0 0 10px; }
+  .sc { display: grid; grid-template-columns: 70px 1fr 44px; align-items: center; gap: 10px; margin: 8px 0 2px; }
+  .sc b { font-size: 15px; }
+  .bar { height: 10px; background: var(--track); border-radius: 5px; overflow: hidden; }
+  .bar > i { display: block; height: 100%; border-radius: 5px; }
+  .pct { text-align: right; font-weight: 700; font-variant-numeric: tabular-nums; }
+  .rng { color: var(--muted); font-size: 13px; margin: 0 0 6px 80px; }
+  .note { color: var(--muted); font-size: 13px; margin-top: 8px; }
+  table { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; font-size: 14px; }
+  th, td { padding: 5px 4px; border-bottom: 1px solid var(--line); text-align: right; }
+  th:first-child, td:first-child { text-align: left; }
+  th { color: var(--muted); font-weight: 600; font-size: 12px; }
+  tr.now td { font-weight: 700; }
+  .tabs { display: flex; gap: 6px; margin-bottom: 10px; flex-wrap: wrap; }
+  .tabs button { border: 1px solid var(--line); background: var(--card); color: var(--ink); padding: 7px 12px;
+                 border-radius: 8px; cursor: pointer; font: inherit; font-size: 14px; }
+  .tabs button[aria-selected="true"] { background: var(--base); border-color: var(--base); color: #fff; }
+  .chart img { width: 100%; height: auto; border-radius: 6px; background: #fcfcfb; display: block; }
+  .warn { background: var(--warn-bg); color: var(--warn-ink); border-radius: 10px; padding: 12px 16px; font-size: 13px; }
+  .err { color: var(--bear); }
+  a { color: var(--base); }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>XRP / USD</h1>
+    <span class="price" id="price">—</span>
+    <span class="meta" id="meta">Cargando…</span>
+  </header>
+
+  <div class="grid">
+    <div>
+      <section class="card">
+        <h2>Escenarios a 30 días (probabilidad del modelo)</h2>
+        <div id="scenarios"></div>
+        <div class="note" id="sims"></div>
+      </section>
+      <section class="card">
+        <h2>Cono de precios</h2>
+        <table><thead><tr><th>Percentil</th><th>Día 7</th><th>Día 30</th></tr></thead><tbody id="cone"></tbody></table>
+      </section>
+      <section class="card">
+        <h2>Probabilidad por nivel (30 días)</h2>
+        <table><thead><tr><th>Nivel</th><th>Lo toca</th><th>Cierra por encima</th></tr></thead><tbody id="levels"></tbody></table>
+      </section>
+      <section class="card">
+        <h2>Fiabilidad del cono (backtest)</h2>
+        <div id="calib" class="note" style="margin:0"></div>
+      </section>
+    </div>
+
+    <div>
+      <section class="card chart">
+        <div class="tabs" role="tablist">
+          <button role="tab" aria-selected="true" data-img="xrp_escenarios_30d_v2.png">Gráfico de escenarios</button>
+          <button role="tab" aria-selected="false" data-img="xrp_calibracion_v1_vs_v2.png">Calibración v1 vs v2</button>
+        </div>
+        <a id="imglink" href="xrp_escenarios_30d_v2.png" target="_blank" rel="noopener">
+          <img id="img" src="xrp_escenarios_30d_v2.png" alt="Gráfico de escenarios de XRP a 30 días">
+        </a>
+        <div class="note">Pulsa el gráfico para verlo a tamaño completo.</div>
+      </section>
+      <div class="warn">
+        <b>Estimación probabilística, no una predicción.</b> Los rangos salen de la volatilidad histórica de XRP.
+        Ningún modelo probado acierta de forma fiable si el precio subirá o bajará. No es una recomendación de inversión:
+        los mercados cripto son muy volátiles y se puede perder todo el capital.
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const fmt = (v, d = 2) => v == null || isNaN(v) ? "—" : Number(v).toLocaleString("es-ES", { minimumFractionDigits: d, maximumFractionDigits: d });
+const COL = { Bajista: "var(--bear)", Base: "var(--base)", Alcista: "var(--bull)" };
+const el = id => document.getElementById(id);
+
+document.querySelectorAll(".tabs button").forEach(b => b.addEventListener("click", () => {
+  document.querySelectorAll(".tabs button").forEach(x => x.setAttribute("aria-selected", x === b));
+  el("img").src = b.dataset.img; el("imglink").href = b.dataset.img;
+}));
+
+fetch("resultados_v2.json", { cache: "no-store" }).then(r => r.json()).then(r => {
+  el("price").textContent = fmt(r.precio, 4) + " $";
+  el("meta").textContent = `cierre ${r.ultima_vela} (Bitstamp) · volatilidad diaria prevista ${fmt(r.sigma_diaria_prevista_pct)} %`;
+
+  el("scenarios").innerHTML = Object.entries(r.escenarios).map(([name, s]) => {
+    const [lo, hi] = s.rango;
+    const rng = lo == null ? `por debajo de ${fmt(hi)} $` : hi == null ? `por encima de ${fmt(lo)} $` : `${fmt(lo)} – ${fmt(hi)} $`;
+    return `<div class="sc"><b>${name}</b><div class="bar"><i style="width:${s.prob_pct}%;background:${COL[name] || "var(--base)"}"></i></div>
+            <span class="pct">${fmt(s.prob_pct, 0)} %</span></div><div class="rng">${rng}</div>`;
+  }).join("");
+  const sims = r.simulaciones || {};
+  if (Object.keys(sims).length)
+    el("sims").textContent = "Ejemplos típicos el día 30: " + Object.entries(sims).map(([k, v]) => `${k} ${fmt(v.dia30)} $`).join(" · ");
+
+  el("cone").innerHTML = Object.keys(r.cono_dia30).map(k =>
+    `<tr${k === "P50" ? ' class="now"' : ""}><td>${k}</td><td>${fmt(r.cono_dia7[k], 3)} $</td><td>${fmt(r.cono_dia30[k], 3)} $</td></tr>`).join("");
+
+  el("levels").innerHTML = Object.entries(r.prob_niveles).sort((a, b) => b[0] - a[0]).map(([lv, v]) =>
+    `<tr><td>${fmt(+lv)} $</td><td>${fmt(v.toca_en_30d_pct, 0)} %</td><td>${fmt(v.cierre_dia30_por_encima_pct, 0)} %</td></tr>`).join("");
+}).catch(() => { el("meta").innerHTML = '<span class="err">No se pudieron cargar los resultados.</span>'; });
+
+fetch("backtest_v1_vs_v2.json", { cache: "no-store" }).then(r => r.json()).then(b => {
+  const rows = Object.keys(b).filter(k => k !== "direccion_30d").map(p => {
+    const v1 = b[p].v1, v2 = b[p].v2_todo;
+    return `<p style="margin:0 0 6px"><b>${p}</b>: el precio acabó dentro del rango del 90 % el <b>${fmt(v2.cobertura_90, 0)} %</b> de las veces
+            (v1: ${fmt(v1.cobertura_90, 0)} %) y por encima del P95 el ${fmt(v2.bandas_pct[">P95"], 0)} % (ideal 5 %).</p>`;
+  });
+  const d = b.direccion_30d;
+  if (d) rows.push(`<p style="margin:0">Dirección a 30 días: el mejor modelo probado acierta un ${fmt(d.logistica_acierto_pct, 0)} %,
+                    sin ventaja real sobre una referencia simple.</p>`);
+  el("calib").innerHTML = rows.join("");
+}).catch(() => { el("calib").textContent = "Sin datos de backtest."; });
+</script>
+</body>
+</html>
