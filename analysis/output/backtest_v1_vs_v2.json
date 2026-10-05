@@ -1,0 +1,185 @@
+{
+ "2020-06→2026-09": {
+  "v1": {
+   "bandas_pct": {
+    "<P5": 4.3,
+    "P5-25": 15.4,
+    "P25-50": 29.1,
+    "P50-75": 25.9,
+    "P75-95": 12.2,
+    ">P95": 13.1
+   },
+   "cobertura_90": 82.6,
+   "cobertura_50": 55.0,
+   "error_calibracion": 26.3,
+   "pinball": 70.913,
+   "interval_score_90": 1.5698,
+   "ancho_90_relativo": 0.846
+  },
+  "v2_todo": {
+   "bandas_pct": {
+    "<P5": 4.6,
+    "P5-25": 16.8,
+    "P25-50": 28.9,
+    "P50-75": 26.4,
+    "P75-95": 17.3,
+    ">P95": 5.9
+   },
+   "cobertura_90": 89.4,
+   "cobertura_50": 55.3,
+   "error_calibracion": 12.5,
+   "pinball": 71.971,
+   "interval_score_90": 1.595,
+   "ancho_90_relativo": 1.17
+  },
+  "v2_3a": {
+   "bandas_pct": {
+    "<P5": 5.5,
+    "P5-25": 17.8,
+    "P25-50": 26.8,
+    "P50-75": 25.9,
+    "P75-95": 17.4,
+    ">P95": 6.6
+   },
+   "cobertura_90": 87.9,
+   "cobertura_50": 52.7,
+   "error_calibracion": 9.5,
+   "pinball": 72.494,
+   "interval_score_90": 1.639,
+   "ancho_90_relativo": 1.14
+  },
+  "v2_todo_sin_deriva": {
+   "bandas_pct": {
+    "<P5": 3.9,
+    "P5-25": 13.0,
+    "P25-50": 26.2,
+    "P50-75": 31.3,
+    "P75-95": 19.5,
+    ">P95": 6.0
+   },
+   "cobertura_90": 90.0,
+   "cobertura_50": 57.5,
+   "error_calibracion": 17.0,
+   "pinball": 70.893,
+   "interval_score_90": 1.5726,
+   "ancho_90_relativo": 1.126
+  },
+  "v2_3a_sin_deriva": {
+   "bandas_pct": {
+    "<P5": 4.5,
+    "P5-25": 13.3,
+    "P25-50": 24.1,
+    "P50-75": 31.0,
+    "P75-95": 19.8,
+    ">P95": 7.3
+   },
+   "cobertura_90": 88.1,
+   "cobertura_50": 55.0,
+   "error_calibracion": 16.6,
+   "pinball": 71.009,
+   "interval_score_90": 1.6,
+   "ancho_90_relativo": 1.093
+  }
+ },
+ "2024-01→2026-09": {
+  "v1": {
+   "bandas_pct": {
+    "<P5": 5.3,
+    "P5-25": 13.3,
+    "P25-50": 33.4,
+    "P50-75": 27.0,
+    "P75-95": 9.0,
+    ">P95": 11.9
+   },
+   "cobertura_90": 82.8,
+   "cobertura_50": 60.5,
+   "error_calibracion": 35.3,
+   "pinball": 59.37,
+   "interval_score_90": 1.4601,
+   "ancho_90_relativo": 0.683
+  },
+  "v2_todo": {
+   "bandas_pct": {
+    "<P5": 4.7,
+    "P5-25": 15.0,
+    "P25-50": 34.2,
+    "P50-75": 26.6,
+    "P75-95": 14.3,
+    ">P95": 5.1
+   },
+   "cobertura_90": 90.2,
+   "cobertura_50": 60.9,
+   "error_calibracion": 22.0,
+   "pinball": 58.388,
+   "interval_score_90": 1.3784,
+   "ancho_90_relativo": 0.908
+  },
+  "v2_3a": {
+   "bandas_pct": {
+    "<P5": 6.8,
+    "P5-25": 16.8,
+    "P25-50": 29.9,
+    "P50-75": 25.2,
+    "P75-95": 14.8,
+    ">P95": 6.6
+   },
+   "cobertura_90": 86.7,
+   "cobertura_50": 55.1,
+   "error_calibracion": 16.9,
+   "pinball": 59.039,
+   "interval_score_90": 1.4231,
+   "ancho_90_relativo": 0.754
+  },
+  "v2_todo_sin_deriva": {
+   "bandas_pct": {
+    "<P5": 3.5,
+    "P5-25": 10.2,
+    "P25-50": 29.5,
+    "P50-75": 35.0,
+    "P75-95": 16.6,
+    ">P95": 5.1
+   },
+   "cobertura_90": 91.4,
+   "cobertura_50": 64.5,
+   "error_calibracion": 29.3,
+   "pinball": 58.28,
+   "interval_score_90": 1.3745,
+   "ancho_90_relativo": 0.879
+  },
+  "v2_3a_sin_deriva": {
+   "bandas_pct": {
+    "<P5": 4.9,
+    "P5-25": 11.5,
+    "P25-50": 24.8,
+    "P50-75": 33.6,
+    "P75-95": 17.0,
+    ">P95": 8.2
+   },
+   "cobertura_90": 86.9,
+   "cobertura_50": 58.4,
+   "error_calibracion": 23.6,
+   "pinball": 57.694,
+   "interval_score_90": 1.3805,
+   "ancho_90_relativo": 0.727
+  }
+ },
+ "direccion_30d": {
+  "n": 2286,
+  "logistica_acierto_pct": 56.1,
+  "logistica_brier": 0.2588,
+  "climatologia_brier": 0.2542,
+  "moneda_brier": 0.25,
+  "siempre_sube_acierto_pct": 46.7,
+  "logistica_acierto_confianza_alta_pct": 55.6,
+  "n_confianza_alta": 1000,
+  "por_anio": {
+   "2020": 44.4,
+   "2021": 54.5,
+   "2022": 53.2,
+   "2023": 55.6,
+   "2024": 64.5,
+   "2025": 60.5,
+   "2026": 54.5
+  }
+ }
+}
