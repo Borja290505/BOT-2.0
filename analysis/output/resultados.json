@@ -296,5 +296,19 @@
    "cierre_dia30_por_encima_pct": 5.8549999999999995,
    "toca_en_30d_pct": 8.955
   }
+ },
+ "simulaciones_representativas": {
+  "Simulación 1": {
+   "precio_dia30": 1.5461040819173164,
+   "max": 1.6160078533264786,
+   "min": 1.4642604648175477,
+   "dias_dentro_P25_P75_pct": 100.0
+  },
+  "Simulación 2": {
+   "precio_dia30": 1.3827843456849718,
+   "max": 1.5519947475600961,
+   "min": 1.369446268412052,
+   "dias_dentro_P25_P75_pct": 100.0
+  }
  }
 }

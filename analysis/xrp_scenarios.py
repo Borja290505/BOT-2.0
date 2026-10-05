@@ -181,6 +181,28 @@ levels = [1.00, 1.20, 1.30, 1.40, 1.45, 1.60, 1.70, 1.80, 2.00]
 res["prob_niveles"] = {f"{L:.2f}": {"cierre_dia30_por_encima_pct": float((fin > L).mean() * 100),
                                     "toca_en_30d_pct": float(((mx >= L) if L > P0 else (mn <= L)).mean() * 100)}
                        for L in levels}
+# ---------- Dos simulaciones representativas del escenario más probable ----------
+# Se eligen dos trayectorias reales del Monte Carlo (no se dibujan a mano): las que
+# más días pasan dentro de la banda P25–P75 y terminan en el escenario base, una por
+# encima y otra por debajo de la mediana. Son ejemplos de un camino típico, no una predicción.
+lp = np.log(P0) + paths
+l25, l50, l75 = (np.percentile(lp, x, axis=0) for x in (25, 50, 75))
+inside = ((lp >= l25) & (lp <= l75)).mean(axis=1)
+end = np.exp(lp[:, -1])
+base = SC_BASE = (1.38, 1.70)
+sims = {}
+for k, (lo_q, hi_q, tgt) in {"Simulación 1": (50, 75, 62.5), "Simulación 2": (25, 50, 37.5)}.items():
+    lo_v, hi_v = np.percentile(lp[:, -1], [lo_q, hi_q])
+    m = (lp[:, -1] >= lo_v) & (lp[:, -1] <= hi_v) & (end >= base[0]) & (end <= base[1])
+    score = inside - np.abs(lp[:, -1] - np.percentile(lp[:, -1], tgt)) * 2
+    score[~m] = -np.inf
+    i = int(np.argmax(score))
+    sims[k] = {"idx": i, "precio_dia30": float(end[i]), "max": float(np.exp(lp[i].max())),
+               "min": float(np.exp(lp[i].min())), "dias_dentro_P25_P75_pct": float(inside[i] * 100),
+               "camino": np.exp(lp[i])}
+res["simulaciones_representativas"] = {k: {kk: vv for kk, vv in v.items() if kk not in ("idx", "camino")}
+                                       for k, v in sims.items()}
+
 json.dump(res, open(os.path.join(OUTDIR, "resultados.json"), "w"), indent=1, default=float, ensure_ascii=False)
 
 # ---------- Gráfico ----------
@@ -206,6 +228,10 @@ fig.patch.set_facecolor("#fcfcfb"); ax.set_facecolor("#fcfcfb")
 ax.fill_between(fut, band(5), band(95), color="#2a78d6", alpha=0.13, lw=0, label="Cono P5–P95 (90 %)")
 ax.fill_between(fut, band(25), band(75), color="#2a78d6", alpha=0.28, lw=0, label="Cono P25–P75 (50 %)")
 ax.plot(fut, band(50), color="#2a78d6", lw=1.6, ls="--", label="Mediana del cono (P50)")
+for (k, v), col in zip(sims.items(), ["#4a3aa7", "#eb6834"]):
+    ax.plot(fut, np.concatenate([[P0], v["camino"]]), color=col, lw=1.5,
+            label=f"{k} (ejemplo típico): {v['precio_dia30']:.2f} $ el día 30")
+    ax.plot(fut[-1], v["precio_dia30"], "o", color=col, ms=6, mec="#fcfcfb", mew=1.5)
 ax.plot(hx.index, hx.values, color="#0b0b0b", lw=1.6, label=f"XRP/USD cierre diario ({src.split()[0]})")
 ax.plot(hx.index, c.rolling(50).mean()[-hist_n:], color="#8a8984", lw=1, label="SMA 50")
 ax.plot(hx.index, c.rolling(200).mean()[-hist_n:], color="#8a8984", lw=1, ls=":", label="SMA 200")
