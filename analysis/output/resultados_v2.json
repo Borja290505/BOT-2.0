@@ -1,0 +1,109 @@
+{
+ "modelo": "v2: HAR Garman-Klass + cuantiles conformales + trayectorias análogas",
+ "ultima_vela": "2026-10-03",
+ "precio": 1.48607,
+ "sigma_diaria_prevista_pct": 3.254045568544138,
+ "n_trayectorias_analogas": 2684,
+ "cono_dia30": {
+  "P5": 1.1379995019451887,
+  "P25": 1.3338039706986018,
+  "P50": 1.4628938221221077,
+  "P75": 1.6315705043114328,
+  "P95": 2.2292628239074586
+ },
+ "cono_dia7": {
+  "P5": 1.3103480529170166,
+  "P25": 1.4190409156189572,
+  "P50": 1.4794068478963924,
+  "P75": 1.5481544025496627,
+  "P95": 1.7575453469981601
+ },
+ "escenarios": {
+  "Bajista": {
+   "prob_pct": 33.1,
+   "rango": [
+    null,
+    1.38
+   ],
+   "rango_80_dentro": [
+    1.0959307527449669,
+    1.3635672519381363
+   ],
+   "invalidacion": 1.66
+  },
+  "Base": {
+   "prob_pct": 46.7,
+   "rango": [
+    1.38,
+    1.7
+   ],
+   "rango_80_dentro": [
+    1.406001670409113,
+    1.633035984340316
+   ],
+   "invalidacion": null
+  },
+  "Alcista": {
+   "prob_pct": 20.2,
+   "rango": [
+    1.7,
+    null
+   ],
+   "rango_80_dentro": [
+    1.7470179170396625,
+    3.1446257167525147
+   ],
+   "invalidacion": 1.3
+  }
+ },
+ "simulaciones": {
+  "Simulación 1": {
+   "dia30": 1.5218357826301405,
+   "max": 1.5372710070222118,
+   "min": 1.414681521468687
+  },
+  "Simulación 2": {
+   "dia30": 1.4023569818507584,
+   "max": 1.5651592683810276,
+   "min": 1.3741711864827286
+  }
+ },
+ "prob_niveles": {
+  "1.00": {
+   "cierre_dia30_por_encima_pct": 98.02533532041728,
+   "toca_en_30d_pct": 3.502235469448584
+  },
+  "1.20": {
+   "cierre_dia30_por_encima_pct": 91.09538002980626,
+   "toca_en_30d_pct": 14.567809239940388
+  },
+  "1.30": {
+   "cierre_dia30_por_encima_pct": 80.88673621460507,
+   "toca_en_30d_pct": 31.296572280178836
+  },
+  "1.40": {
+   "cierre_dia30_por_encima_pct": 63.152011922503725,
+   "toca_en_30d_pct": 60.61847988077497
+  },
+  "1.45": {
+   "cierre_dia30_por_encima_pct": 52.682563338301044,
+   "toca_en_30d_pct": 79.17287630402384
+  },
+  "1.60": {
+   "cierre_dia30_por_encima_pct": 27.943368107302536,
+   "toca_en_30d_pct": 48.5096870342772
+  },
+  "1.70": {
+   "cierre_dia30_por_encima_pct": 20.156482861400892,
+   "toca_en_30d_pct": 29.545454545454547
+  },
+  "1.80": {
+   "cierre_dia30_por_encima_pct": 16.02086438152012,
+   "toca_en_30d_pct": 21.795827123695975
+  },
+  "2.00": {
+   "cierre_dia30_por_encima_pct": 10.171385991058122,
+   "toca_en_30d_pct": 14.232488822652755
+  }
+ }
+}
