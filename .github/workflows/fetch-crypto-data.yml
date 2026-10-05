@@ -1,23 +1,54 @@
-name: fetch-crypto-data
+name: analisis-xrp
 on:
+  workflow_dispatch:            # botón "Run workflow" (solo aparece cuando este archivo está en main)
+  schedule:
+    - cron: "17 6 * * *"        # cada día a las 06:17 UTC (solo funciona desde main)
   push:
     branches: [claude/crypto-asset-scenario-analysis-tzf4se]
-    paths: [analysis/fetch_data.py, .github/workflows/fetch-crypto-data.yml]
-  workflow_dispatch:
+    paths: [analysis/*.py, analysis/requirements.txt, .github/workflows/fetch-crypto-data.yml]
 permissions:
   contents: write
 jobs:
-  fetch:
+  analisis:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-      - run: python analysis/fetch_data.py
-      - run: |
+          cache: pip
+      - run: pip install -r analysis/requirements.txt
+      - name: Descargar datos
+        run: python analysis/fetch_data.py
+      - name: Backtest v1 vs v2
+        run: python analysis/backtest_v1_vs_v2.py
+      - name: Cono y escenarios (v2)
+        run: python analysis/xrp_scenarios_v2.py
+      - name: Resumen en la página del run
+        run: |
+          python - >> "$GITHUB_STEP_SUMMARY" <<'PY'
+          import json
+          r = json.load(open("analysis/output/resultados_v2.json"))
+          print(f"## XRP — escenarios a 30 días (cierre {r['ultima_vela']}: {r['precio']:.4f} $)\n")
+          print("| Percentil día 30 | Precio |\n|---|---|")
+          for k, v in r["cono_dia30"].items():
+              print(f"| {k} | {v:.3f} $ |")
+          print("\n| Escenario | Probabilidad | Rango |\n|---|---|---|")
+          for k, v in r["escenarios"].items():
+              lo, hi = v["rango"]
+              rng = f"< {hi}" if lo is None else (f"> {lo}" if hi is None else f"{lo}–{hi}")
+              print(f"| {k} | {v['prob_pct']:.0f} % | {rng} $ |")
+          print("\n*Estimación probabilística, no una predicción.* El gráfico está en el artefacto **graficos-xrp** de este run.")
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: graficos-xrp
+          path: analysis/output/
+      - name: Guardar resultados en el repositorio
+        run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add analysis/data
-          git commit -m "Datos de mercado descargados ($(date -u +%F))" || echo "sin cambios"
-          git push
+          git add analysis/data analysis/output
+          git commit -m "Análisis XRP actualizado ($(date -u +%F))" || exit 0
+          git pull --rebase -X theirs origin "$GITHUB_REF_NAME"
+          git push origin HEAD:"$GITHUB_REF_NAME"
