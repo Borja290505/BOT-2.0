@@ -1,10 +1,18 @@
 name: analisis-xrp
 on:
   workflow_dispatch:            # botón "Run workflow" (solo aparece cuando este archivo está en main)
+    inputs:
+      horizonte:
+        description: "Horizonte en días"
+        type: choice
+        options: ["7", "14", "30"]
+        default: "7"
   schedule:
     - cron: "17 6 * * *"        # cada día a las 06:17 UTC (solo funciona desde main)
 permissions:
   contents: write
+env:
+  HORIZONTE: ${{ inputs.horizonte || '7' }}
 jobs:
   analisis:
     runs-on: ubuntu-latest
@@ -26,14 +34,16 @@ jobs:
           python - >> "$GITHUB_STEP_SUMMARY" <<'PY'
           import json
           r = json.load(open("analysis/output/resultados_v2.json"))
-          print(f"## XRP — escenarios a 30 días (cierre {r['ultima_vela']}: {r['precio']:.4f} $)\n")
-          print("| Percentil día 30 | Precio |\n|---|---|")
-          for k, v in r["cono_dia30"].items():
+          H = r["horizonte_dias"]
+          print(f"## XRP — escenarios a {H} días (precio {r['precio']:.4f} $ a las {r['precio_hora_utc']} UTC)\n")
+          fin = r["cono_por_dia"][str(H)]
+          print(f"| Percentil día {H} | Precio |\n|---|---|")
+          for k, v in fin.items():
               print(f"| {k} | {v:.3f} $ |")
           print("\n| Escenario | Probabilidad | Rango |\n|---|---|---|")
           for k, v in r["escenarios"].items():
               lo, hi = v["rango"]
-              rng = f"< {hi}" if lo is None else (f"> {lo}" if hi is None else f"{lo}–{hi}")
+              rng = f"< {hi:.3f}" if lo is None else (f"> {lo:.3f}" if hi is None else f"{lo:.3f}–{hi:.3f}")
               print(f"| {k} | {v['prob_pct']:.0f} % | {rng} $ |")
           print("\n*Estimación probabilística, no una predicción.* El gráfico está en el artefacto **graficos-xrp** de este run.")
           PY
@@ -55,7 +65,7 @@ jobs:
           mkdir -p _site
           cp analysis/web/index.html _site/
           cp analysis/output/resultados_v2.json analysis/output/backtest_v1_vs_v2.json _site/
-          cp analysis/output/xrp_escenarios_30d_v2.png analysis/output/xrp_calibracion_v1_vs_v2.png _site/
+          cp analysis/output/xrp_escenarios_v2.png analysis/output/xrp_calibracion_v1_vs_v2.png _site/
       - uses: actions/upload-pages-artifact@v3
         with:
           path: _site

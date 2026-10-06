@@ -52,11 +52,17 @@ jobs = [
     ("kraken_adausd_1d.csv", lambda: kraken("ADAUSD")),
     ("kraken_hbarusd_1d.csv", lambda: kraken("HBARUSD")),
 ]
+ok_xrp = False
 for name, fn in jobs:
     try:
         save(name, fn())
+        ok_xrp = ok_xrp or name == "bitstamp_xrpusd_1d.csv"
     except Exception as e:
         print("FAIL", name, e)
+
+if ok_xrp:                                   # hora del precio actual (solo si XRP se descargó bien)
+    json.dump({"descargado_utc": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())},
+              open(os.path.join(OUT, "meta.json"), "w"))
 
 # Instantánea de mercado (CoinGecko) para contraste
 try:
