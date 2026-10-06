@@ -3,12 +3,15 @@ Aplicación de escritorio para el análisis de escenarios de XRP.
 Ábrela con doble clic en "Abrir_XRP.bat" (Windows) o con:  python analysis/app_xrp.py
 """
 import json, os, subprocess, sys, threading, queue
+from datetime import datetime, timezone
 import tkinter as tk
 from tkinter import ttk, messagebox
 
 import matplotlib
 matplotlib.use("TkAgg")
 import matplotlib.image as mpimg
+import matplotlib.dates as mdates
+import numpy as np
 from matplotlib.figure import Figure
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2Tk
 
@@ -17,6 +20,8 @@ OUT = os.path.join(HERE, "output")
 RES = os.path.join(OUT, "resultados_v2.json")
 BT = os.path.join(OUT, "backtest_v1_vs_v2.json")
 IMG_ESC = os.path.join(OUT, "xrp_escenarios_v2.png")
+DATOS_GRAF = os.path.join(OUT, "grafico_datos.json")
+DIAS = ["lun", "mar", "mié", "jue", "vie", "sáb", "dom"]
 IMG_CAL = os.path.join(OUT, "xrp_calibracion_v1_vs_v2.png")
 IMG_VER = os.path.join(OUT, "verificacion.png")
 
@@ -123,7 +128,10 @@ class App(tk.Tk):
         body.add(right, minsize=600)
         nb = ttk.Notebook(right)
         nb.pack(fill="both", expand=True)
-        self.fig_esc, self.cv_esc = self._figure_tab(nb, "Gráfico de escenarios")
+        self.fig_esc, self.cv_esc = self._figure_tab(nb, "Gráfico de escenarios", cabecera=True)
+        self.cv_esc.mpl_connect("motion_notify_event", self._on_hover)
+        self.cv_esc.mpl_connect("axes_leave_event", lambda e: self._hover_reset())
+        self.graf = None
         self.fig_cal, self.cv_cal = self._figure_tab(nb, "Calibración v1 vs v2")
         self.fig_ver, self.cv_ver = self._figure_tab(nb, "Verificación a ciegas")
         logf = tk.Frame(nb, bg=BG)
@@ -156,9 +164,14 @@ class App(tk.Tk):
         tv.pack(fill="x", pady=(0, 12))
         return tv
 
-    def _figure_tab(self, nb, title):
+    def _figure_tab(self, nb, title, cabecera=False):
         f = tk.Frame(nb, bg=BG)
         nb.add(f, text=title)
+        if cabecera:                                 # fecha y precios bajo el cursor
+            self.lbl_hover = tk.Label(f, text="", bg=CARD, fg=INK, font=(FONT, 12, "bold"), anchor="w", justify="left",
+                                      padx=12, pady=6, highlightbackground=LINE, highlightthickness=1)
+            self.lbl_hover.pack(side="top", fill="x", pady=(4, 0))
+            self.lbl_hover.bind("<Configure>", lambda e: self.lbl_hover.config(wraplength=max(200, e.width - 30)))
         fig = Figure(figsize=(10, 6), dpi=100, facecolor=BG)
         cv = FigureCanvasTkAgg(fig, master=f)
         tb = NavigationToolbar2Tk(cv, f, pack_toolbar=False)
@@ -178,9 +191,116 @@ class App(tk.Tk):
             ax.text(0.5, 0.5, empty_msg, ha="center", va="center", fontsize=12, color=MUTED, transform=ax.transAxes)
         cv.draw_idle()
 
+
+    # ------------------------------------------------------------------ gráfico interactivo
+    def draw_interactive(self):
+        """Dibuja el gráfico de escenarios con datos reales: al pasar el ratón muestra fecha y precios."""
+        d = json.load(open(DATOS_GRAF, encoding="utf-8"))
+        ht = np.array([np.datetime64(t) for t in d["historico"]["t"]]).astype("datetime64[s]").astype(object)
+        ft = np.array([np.datetime64(t) for t in d["futuro"]["t"]]).astype("datetime64[s]").astype(object)
+        hp = np.array(d["historico"]["p"]); fu = {k: np.array(v) for k, v in d["futuro"].items() if k != "t"}
+        sims = {k: np.array(v) for k, v in d["simulaciones"].items()}
+        horas = d.get("paso") == "hora"
+        dec = 4 if horas else 3
+        fig = self.fig_esc
+        fig.clear()
+        ax = fig.add_axes([0.10, 0.09, 0.78, 0.86])
+        ax.set_facecolor(BG)
+        ax.fill_between(ft, fu["P5"], fu["P95"], color="#2a78d6", alpha=0.13, lw=0, label="Cono 90 %")
+        ax.fill_between(ft, fu["P25"], fu["P75"], color="#2a78d6", alpha=0.28, lw=0, label="Cono 50 %")
+        ax.plot(ft, fu["P50"], color="#2a78d6", lw=1.5, ls="--", label="Mediana")
+        cols = {"Simulación 1": "#4a3aa7", "Simulación 2": "#eb6834"}
+        for k, v in sims.items():
+            ax.plot(ft, v, color=cols.get(k, "#4a3aa7"), lw=1.5, label=k)
+        if "sma50" in d:
+            st = np.array([np.datetime64(t) for t in d["sma50"]["t"]]).astype("datetime64[s]").astype(object)
+            ax.plot(st, d["sma50"]["p"], color="#8a8984", lw=1, label="SMA 50")
+        ax.plot(ht, hp, color=INK, lw=1.5, label="Precio XRP/USD")
+        for j, v in enumerate(d["soportes"]):
+            ax.axhline(v, color="#008300", lw=0.8, ls=(0, (4, 3)), alpha=0.7)
+            ax.text(1.002, v, f"S{j+1} {v:.{dec}f}", transform=ax.get_yaxis_transform(), fontsize=8, color="#008300", va="center")
+        for j, v in enumerate(d["resistencias"]):
+            ax.axhline(v, color="#e34948", lw=0.8, ls=(0, (4, 3)), alpha=0.7)
+            ax.text(1.002, v, f"R{j+1} {v:.{dec}f}", transform=ax.get_yaxis_transform(), fontsize=8, color="#b8302f", va="center")
+        ax.axvline(ft[0], color=MUTED, lw=0.8)
+        ax.xaxis.set_major_formatter(mdates.DateFormatter("%d-%b %Hh" if horas else "%d-%b"))
+        ax.grid(axis="y", color=LINE, lw=0.6); ax.set_axisbelow(True)
+        for s_ in ("top", "right"):
+            ax.spines[s_].set_visible(False)
+        ax.set_ylabel("USD por XRP")
+        ax.legend(loc="upper left", fontsize=8, frameon=False, ncol=3)
+        # elementos del cursor
+        self.h_vline = ax.axvline(ft[0], color=MUTED, lw=0.8, ls=":", visible=False)
+        self.h_pts = {k: ax.plot([], [], "o", ms=6, color=c, mec=BG, mew=1.5, zorder=5)[0]
+                      for k, c in [("precio", INK), ("Simulación 1", "#4a3aa7"), ("Simulación 2", "#eb6834"), ("mediana", "#2a78d6")]}
+        self.h_box = ax.annotate("", xy=(0, 0), xytext=(12, 12), textcoords="offset points", fontsize=9, visible=False,
+                                 bbox=dict(boxstyle="round,pad=0.4", fc="#ffffff", ec=LINE, alpha=0.95), zorder=10)
+        self.graf = dict(ax=ax, ht=ht, hp=hp, ft=ft, fu=fu, sims=sims, dec=dec, horas=horas,
+                         hn=mdates.date2num(ht), fn=mdates.date2num(ft))
+        self._hover_reset()
+        self.cv_esc.draw_idle()
+
+    def _fecha(self, t):
+        """Fecha UTC → texto en la hora local del ordenador."""
+        loc = t.replace(tzinfo=timezone.utc).astimezone()
+        txt = f"{DIAS[loc.weekday()]} {loc:%d-%m-%Y}"
+        return txt + (f" {loc:%H:%M} (hora local)" if self.graf and self.graf["horas"] else "")
+
+    def _hover_reset(self):
+        g = self.graf
+        if not g:
+            return
+        for a in [self.h_vline, self.h_box, *self.h_pts.values()]:
+            a.set_visible(False)
+        fin = g["ft"][-1]
+        s1, s2 = (v[-1] for v in g["sims"].values())
+        self.lbl_hover.config(text=f"Ahora: {self._fecha(g['ft'][0])}  ·  Precio {g['hp'][-1]:.{g['dec']}f} $  "
+                                   f"(pasa el ratón por el gráfico para ver fecha y precios)")
+        self.cv_esc.draw_idle()
+
+    def _on_hover(self, ev):
+        g = self.graf
+        if not g or ev.inaxes is not g["ax"] or ev.xdata is None:
+            return
+        dec = g["dec"]
+        for p in self.h_pts.values():
+            p.set_data([], [])
+        if ev.xdata <= g["fn"][0]:                   # zona histórica: precio real
+            i = int(np.abs(g["hn"] - ev.xdata).argmin())
+            t, y = g["ht"][i], g["hp"][i]
+            self.h_pts["precio"].set_data([t], [y])
+            linea = f"Precio {y:.{dec}f} $"
+            caja = f"{self._fecha(t)}\nPrecio: {y:.{dec}f} $"
+        else:                                        # zona futura: estimaciones
+            i = int(np.abs(g["fn"] - ev.xdata).argmin())
+            t, y = g["ft"][i], g["fu"]["P50"][i]
+            s1, s2 = (v[i] for v in g["sims"].values())
+            self.h_pts["Simulación 1"].set_data([t], [s1])
+            self.h_pts["Simulación 2"].set_data([t], [s2])
+            self.h_pts["mediana"].set_data([t], [y])
+            lo, hi = g["fu"]["P5"][i], g["fu"]["P95"][i]
+            paso = (f"+{i} h" if g["horas"] else f"día +{i}") if i else "ahora"
+            linea = f"{paso}  ·  Sim. 1: {s1:.{dec}f} $  ·  Sim. 2: {s2:.{dec}f} $  ·  Mediana: {y:.{dec}f} $"
+            caja = (f"{self._fecha(t)} ({paso})\nSimulación 1: {s1:.{dec}f} $\nSimulación 2: {s2:.{dec}f} $\n"
+                    f"Mediana: {y:.{dec}f} $\nRango 90 %: {lo:.{dec}f} – {hi:.{dec}f} $")
+        self.h_vline.set_xdata([t, t]); self.h_vline.set_visible(True)
+        self.h_box.xy = (mdates.date2num(t), y)
+        self.h_box.set_text(caja)
+        # la caja se coloca a la izquierda del cursor en la mitad derecha del gráfico
+        x0, x1 = g["ax"].get_xlim()
+        self.h_box.set_position((-150, 12) if ev.xdata > (x0 + x1) / 2 else (12, 12))
+        self.h_box.set_visible(True)
+        self.lbl_hover.config(text=f"{self._fecha(t)}  ·  {linea}")
+        self.cv_esc.draw_idle()
+
     def load_results(self):
         msg = "Aún no hay resultados.\nPulsa «Actualizar análisis»."
-        self.show_image(self.fig_esc, self.cv_esc, IMG_ESC, msg)
+        if os.path.exists(DATOS_GRAF):
+            self.draw_interactive()
+        else:
+            self.graf = None
+            self.lbl_hover.config(text="")
+            self.show_image(self.fig_esc, self.cv_esc, IMG_ESC, msg)
         self.show_image(self.fig_cal, self.cv_cal, IMG_CAL, "Marca «Recalcular backtest» y pulsa Actualizar.")
         self.show_image(self.fig_ver, self.cv_ver, IMG_VER, "Pulsa «Verificar a ciegas» para comprobar el modelo\ncontra el precio real que siguió.")
         if not os.path.exists(RES):

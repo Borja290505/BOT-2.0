@@ -127,3 +127,21 @@ def pinball(qpred, real, qs=QS):
 
 def interval_score(lo, hi, real, alpha=0.10):
     return (hi - lo) + 2 / alpha * max(lo - real, 0) + 2 / alpha * max(real - hi, 0)
+
+
+# ---------------------------------------------------------------- datos para el gráfico interactivo
+def guardar_datos_grafico(path, hist, fut, q, P0, sims, sup, res_, escenarios, titulo, paso, extra=None):
+    """Guarda las series del gráfico de escenarios (para que la app muestre precios al pasar el ratón)."""
+    import json
+    fmt = "%Y-%m-%dT%H:%M:%S"
+    d = {"titulo": titulo, "paso": paso, "precio": float(P0),
+         "historico": {"t": [pd.Timestamp(t).strftime(fmt) for t in hist.index], "p": [float(v) for v in hist.values]},
+         "futuro": {"t": [pd.Timestamp(t).strftime(fmt) for t in fut],
+                    **{f"P{p}": [float(P0)] + [float(v) for v in q[p]] for p in q}},
+         "simulaciones": {k: [float(P0)] + [float(v) for v in s["camino"]] for k, s in sims.items()},
+         "soportes": [float(v) for v in sup], "resistencias": [float(v) for v in res_],
+         "escenarios": {k: {"prob_pct": round(v["p"], 1), "lo": v["lo"], "hi": v["hi"], "col": v["col"]}
+                        for k, v in escenarios.items()}}
+    if extra:
+        d.update(extra)
+    json.dump(d, open(path, "w"), ensure_ascii=False)

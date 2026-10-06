@@ -266,6 +266,8 @@ def escenarios():
     hx = xa.close[-96:]
     fut = pd.date_range(ahora, periods=H + 1, freq="h")
     band = lambda p: np.concatenate([[P0], q[p]])
+    m.guardar_datos_grafico(os.path.join(OUT, "grafico_datos.json"), hx, fut, q, P0, sims, SUP, RES, SC,
+                            "XRP/USD — próximas 24 horas", "hora")
     span = pd.Timedelta(hours=96 + H)
     fig, ax = plt.subplots(figsize=(13, 7.2), dpi=150)
     fig.patch.set_facecolor("#fcfcfb"); ax.set_facecolor("#fcfcfb")
