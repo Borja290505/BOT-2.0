@@ -164,14 +164,14 @@
   }
  },
  "direccion_30d": {
-  "n": 2287,
-  "logistica_acierto_pct": 56.1,
-  "logistica_brier": 0.2588,
+  "n": 2288,
+  "logistica_acierto_pct": 56.0,
+  "logistica_brier": 0.2589,
   "climatologia_brier": 0.2543,
   "moneda_brier": 0.25,
   "siempre_sube_acierto_pct": 46.7,
   "logistica_acierto_confianza_alta_pct": 55.5,
-  "n_confianza_alta": 1001,
+  "n_confianza_alta": 1002,
   "por_anio": {
    "2020": 44.4,
    "2021": 54.5,
@@ -179,7 +179,7 @@
    "2023": 55.6,
    "2024": 64.5,
    "2025": 60.5,
-   "2026": 54.3
+   "2026": 54.0
   }
  }
 }
