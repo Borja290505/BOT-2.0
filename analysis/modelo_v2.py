@@ -7,7 +7,7 @@ import os
 import numpy as np, pandas as pd
 
 D = os.path.join(os.path.dirname(__file__), "data")
-H = 30
+H = int(os.environ.get("HORIZONTE", "7"))      # días del horizonte (7 por defecto; HORIZONTE=30 para un mes)
 QS = np.array([0.05, 0.25, 0.50, 0.75, 0.95])
 MIN_TRAIN = 365          # muestras mínimas para ajustar el HAR y los cuantiles
 REFIT = 20               # reajuste del HAR cada N días
@@ -17,9 +17,10 @@ def load(name):
     df = df[["open", "high", "low", "close", "volume"]].astype(float)
     return df[df.close > 0]
 
-def load_xrp():
-    x = load("bitstamp_xrpusd_1d.csv").iloc[:-1]      # se descarta la vela del día en curso
-    return x
+def load_xrp(incluir_hoy=False):
+    """Velas diarias de XRP. Por defecto descarta la vela del día en curso (incompleta)."""
+    x = load("bitstamp_xrpusd_1d.csv")
+    return x if incluir_hoy else x.iloc[:-1]
 
 # ---------------------------------------------------------------- volatilidad HAR
 def har_features(df):
@@ -61,7 +62,7 @@ def z_paths(lc, sig, h=H):
 
 def conformal_quantiles(Z, sig, t, qs=QS, window=None, demean=False, h=H):
     """cuantiles del retorno log a cada horizonte para la fecha t, solo con datos conocidos en t."""
-    hi = t - h + 1                         # ventanas cuyo resultado a 30 d ya se conoce en t
+    hi = t - h + 1                         # ventanas cuyo resultado a h días ya se conoce en t
     lo = 0 if window is None else max(0, hi - window)
     zz = Z[lo:hi]; zz = zz[np.isfinite(zz).all(1)]
     if len(zz) < MIN_TRAIN:

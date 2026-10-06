@@ -36,7 +36,7 @@ def evaluate(rows, key):
             "pinball": round(pin * 1000, 3), "interval_score_90": round(isc, 4), "ancho_90_relativo": round(width, 3)}
 
 out = {}
-periods = {"2020-06→2026-09": rows, "2024-01→2026-09": [rw for rw in rows if rw["fecha"] >= pd.Timestamp("2024-01-01")]}
+periods = {"desde 2020-06": rows, "desde 2024-01": [rw for rw in rows if rw["fecha"] >= pd.Timestamp("2024-01-01")]}
 for pname, rr in periods.items():
     out[pname] = {k: evaluate(rr, k) for k in ["v1"] + list(variants)}
 
@@ -59,6 +59,8 @@ dir_out = {
     "por_anio": {str(yr): round(float(((pv[s] > .5) == yv[s]).mean() * 100), 1)
                  for yr in sorted(set(dates[ev].year)) for s in [dates[ev].year == yr]},
 }
-out["direccion_30d"] = dir_out
+out["direccion"] = dir_out
+out["horizonte_dias"] = H
+out["hasta"] = str(rows[-1]["fecha"].date())
 print(json.dumps(out, indent=1, ensure_ascii=False))
 json.dump(out, open(os.path.join(os.path.dirname(__file__), "output", "backtest_v1_vs_v2.json"), "w"), indent=1, ensure_ascii=False)

@@ -16,8 +16,9 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 OUT = os.path.join(HERE, "output")
 RES = os.path.join(OUT, "resultados_v2.json")
 BT = os.path.join(OUT, "backtest_v1_vs_v2.json")
-IMG_ESC = os.path.join(OUT, "xrp_escenarios_30d_v2.png")
+IMG_ESC = os.path.join(OUT, "xrp_escenarios_v2.png")
 IMG_CAL = os.path.join(OUT, "xrp_calibracion_v1_vs_v2.png")
+IMG_VER = os.path.join(OUT, "verificacion.png")
 
 BG, CARD, INK, MUTED, LINE = "#fcfcfb", "#ffffff", "#0b0b0b", "#52514e", "#e6e5e0"
 COL = {"Bajista": "#e34948", "Base": "#2a78d6", "Alcista": "#1baf7a"}
@@ -37,7 +38,7 @@ def python_cmd():
 class App(tk.Tk):
     def __init__(self):
         super().__init__()
-        self.title("XRP · Escenarios a 30 días")
+        self.title("XRP · Escenarios")
         self.configure(bg=BG)
         self.geometry("1400x860")
         self.minsize(1100, 700)
@@ -81,11 +82,18 @@ class App(tk.Tk):
         self.lbl_date = tk.Label(top, text="", font=(FONT, 10), bg=BG, fg=MUTED)
         self.lbl_date.pack(side="left", padx=(12, 0), pady=(8, 0))
 
+        bar = tk.Frame(self, bg=BG)
+        bar.pack(fill="x", padx=16, pady=(0, 6))
+        top = bar                                   # los controles van en una segunda fila
         ttk.Button(top, text="Abrir carpeta de resultados", command=self.open_folder).pack(side="right", padx=(8, 0))
+        ttk.Button(top, text="Verificar a ciegas (hace ~15 días)", command=self.run_verify).pack(side="left")
         self.var_bt = tk.BooleanVar(value=not os.path.exists(BT))
         ttk.Checkbutton(top, text="Recalcular backtest (≈20 s)", variable=self.var_bt).pack(side="right", padx=8)
         self.btn = ttk.Button(top, text="⟳  Actualizar análisis", style="Accent.TButton", command=self.run_update)
         self.btn.pack(side="right")
+        self.var_h = tk.StringVar(value=str(self._horizonte_guardado()))
+        ttk.Combobox(top, textvariable=self.var_h, values=["7", "14", "30"], width=4, state="readonly").pack(side="right", padx=(4, 10))
+        tk.Label(top, text="Horizonte (días):", bg=BG, fg=INK, font=(FONT, 10)).pack(side="right")
 
         body = tk.PanedWindow(self, orient="horizontal", bg=BG, sashwidth=6, bd=0)
         body.pack(fill="both", expand=True, padx=16, pady=6)
@@ -98,11 +106,11 @@ class App(tk.Tk):
         self.sc_frame.pack(fill="x", pady=(0, 12))
 
         self._section(left, "Cono de precios")
-        self.tv_cone = self._tree(left, ("p", "d7", "d30"), ("Percentil", "Día 7", "Día 30"), (90, 110, 110), 5)
+        self.tv_cone = self._tree(left, ("p", "a", "b", "c"), ("Percentil", "", "", ""), (80, 85, 85, 85), 5)
 
-        self._section(left, "Probabilidad por nivel (30 días)")
-        self.tv_lv = self._tree(left, ("lv", "toca", "cierre"), ("Nivel $", "Lo toca", "Cierra por encima"),
-                                (80, 110, 140), 9)
+        self.lbl_lv = self._section(left, "Probabilidad por nivel")
+        self.tv_lv = self._tree(left, ("lv", "toca", "cierre"), ("Nivel $", "Lo toca", "Acaba por encima"),
+                                (80, 110, 140), 7)
 
         self._section(left, "Fiabilidad del cono (backtest)")
         self.lbl_cal = tk.Label(left, text="", justify="left", anchor="w", wraplength=350,
@@ -116,6 +124,7 @@ class App(tk.Tk):
         nb.pack(fill="both", expand=True)
         self.fig_esc, self.cv_esc = self._figure_tab(nb, "Gráfico de escenarios")
         self.fig_cal, self.cv_cal = self._figure_tab(nb, "Calibración v1 vs v2")
+        self.fig_ver, self.cv_ver = self._figure_tab(nb, "Verificación a ciegas")
         logf = tk.Frame(nb, bg=BG)
         nb.add(logf, text="Registro")
         self.log = tk.Text(logf, bg=CARD, fg=INK, font=("Consolas" if sys.platform.startswith("win") else "DejaVu Sans Mono", 9),
@@ -134,7 +143,9 @@ class App(tk.Tk):
                               "Puedes perder todo el capital.", bg=BG, fg=MUTED, font=(FONT, 9)).pack(side="left")
 
     def _section(self, parent, text):
-        tk.Label(parent, text=text.upper(), bg=BG, fg=MUTED, font=(FONT, 9, "bold"), anchor="w").pack(fill="x", pady=(4, 4))
+        lbl = tk.Label(parent, text=text.upper(), bg=BG, fg=MUTED, font=(FONT, 9, "bold"), anchor="w")
+        lbl.pack(fill="x", pady=(4, 4))
+        return lbl
 
     def _tree(self, parent, cols, heads, widths, height):
         tv = ttk.Treeview(parent, columns=cols, show="headings", height=height)
@@ -170,11 +181,16 @@ class App(tk.Tk):
         msg = "Aún no hay resultados.\nPulsa «Actualizar análisis»."
         self.show_image(self.fig_esc, self.cv_esc, IMG_ESC, msg)
         self.show_image(self.fig_cal, self.cv_cal, IMG_CAL, "Marca «Recalcular backtest» y pulsa Actualizar.")
+        self.show_image(self.fig_ver, self.cv_ver, IMG_VER, "Pulsa «Verificar a ciegas» para comprobar el modelo\ncontra el precio real de las últimas dos semanas.")
         if not os.path.exists(RES):
             return
         r = json.load(open(RES, encoding="utf-8"))
         self.lbl_price.config(text=f"{r['precio']:.4f} $")
-        self.lbl_date.config(text=f"cierre {r['ultima_vela']} (Bitstamp) · σ diaria prevista {r['sigma_diaria_prevista_pct']:.2f} %")
+        H = r.get("horizonte_dias", 7)
+        self.title(f"XRP · Escenarios a {H} días")
+        self.lbl_date.config(text=f"a las {r['precio_hora_utc']} UTC (Bitstamp) · horizonte {H} días, hasta el {r['hasta']} · "
+                                  f"σ diaria prevista {r['sigma_diaria_prevista_pct']:.2f} %")
+        self.lbl_lv.config(text=f"PROBABILIDAD POR NIVEL ({H} DÍAS)")
 
         for w in self.sc_frame.winfo_children():
             w.destroy()
@@ -182,7 +198,7 @@ class App(tk.Tk):
             row = tk.Frame(self.sc_frame, bg=CARD)
             row.pack(fill="x", padx=12, pady=6)
             lo, hi = s["rango"]
-            rng = f"< {hi:.2f} $" if lo is None else (f"> {lo:.2f} $" if hi is None else f"{lo:.2f} – {hi:.2f} $")
+            rng = f"< {hi:.3f} $" if lo is None else (f"> {lo:.3f} $" if hi is None else f"{lo:.3f} – {hi:.3f} $")
             tk.Label(row, text=name, width=8, anchor="w", bg=CARD, fg=INK, font=(FONT, 11, "bold")).pack(side="left")
             bar = tk.Canvas(row, width=130, height=14, bg=CARD, highlightthickness=0)
             bar.pack(side="left", padx=6)
@@ -192,30 +208,39 @@ class App(tk.Tk):
             tk.Label(row, text=rng, anchor="e", bg=CARD, fg=MUTED, font=(FONT, 10)).pack(side="right")
         sims = r.get("simulaciones", {})
         if sims:
-            txt = " · ".join(f"{k}: {v['dia30']:.2f} $" for k, v in sims.items())
-            tk.Label(self.sc_frame, text=f"Ejemplos típicos día 30 → {txt}", bg=CARD, fg=MUTED,
+            txt = " · ".join(f"{k}: {v['final']:.3f} $" for k, v in sims.items())
+            tk.Label(self.sc_frame, text=f"Ejemplos típicos día {H} → {txt}", bg=CARD, fg=MUTED,
                      font=(FONT, 9), anchor="w").pack(fill="x", padx=12, pady=(0, 8))
 
         self.tv_cone.delete(*self.tv_cone.get_children())
-        for k in r["cono_dia30"]:
-            self.tv_cone.insert("", "end", values=(k, f"{r['cono_dia7'][k]:.3f} $", f"{r['cono_dia30'][k]:.3f} $"))
+        dias = sorted(r["cono_por_dia"], key=int)[-3:]
+        cols = ("a", "b", "c")[-len(dias):]
+        for col in ("a", "b", "c"):
+            self.tv_cone.heading(col, text="")
+        for col, d in zip(cols, dias):
+            self.tv_cone.heading(col, text=f"Día {d}")
+        for k in r["cono_por_dia"][dias[0]]:
+            vals = [""] * (3 - len(dias)) + [f"{r['cono_por_dia'][d][k]:.3f} $" for d in dias]
+            self.tv_cone.insert("", "end", values=(k, *vals))
         self.tv_lv.delete(*self.tv_lv.get_children())
         for lv, v in sorted(r["prob_niveles"].items(), key=lambda kv: -float(kv[0])):
-            self.tv_lv.insert("", "end", values=(lv, f"{v['toca_en_30d_pct']:.0f} %", f"{v['cierre_dia30_por_encima_pct']:.0f} %"))
+            self.tv_lv.insert("", "end", values=(lv, f"{v['toca_pct']:.0f} %", f"{v['cierre_final_por_encima_pct']:.0f} %"))
 
-        if os.path.exists(BT):
-            b = json.load(open(BT, encoding="utf-8"))
-            per = list(k for k in b if k != "direccion_30d")
+        b = json.load(open(BT, encoding="utf-8")) if os.path.exists(BT) else None
+        if b and b.get("horizonte_dias") == H:
+            per = [k for k in b if k.startswith("desde")]
             lines = []
             for p in per:
                 v1, v2 = b[p]["v1"], b[p]["v2_todo"]
                 lines.append(f"{p}: dentro del rango del 90 % → v2 {v2['cobertura_90']:.0f} % (v1 {v1['cobertura_90']:.0f} %); "
                              f"por encima del P95 → v2 {v2['bandas_pct']['>P95']:.0f} % (ideal 5 %).")
-            d = b.get("direccion_30d")
+            d = b.get("direccion")
             if d:
-                lines.append(f"Dirección a 30 días: ningún modelo probado acierta de forma fiable "
+                lines.append(f"Dirección a {H} días: ningún modelo probado acierta de forma fiable "
                              f"(logística {d['logistica_acierto_pct']:.0f} %, peor que la referencia en Brier).")
             self.lbl_cal.config(text="\n".join(lines))
+        else:
+            self.lbl_cal.config(text="Sin backtest para este horizonte: marca «Recalcular backtest» y pulsa Actualizar.")
 
     # ------------------------------------------------------------------ actualización
     def run_update(self):
@@ -225,15 +250,38 @@ class App(tk.Tk):
         self.btn.state(["disabled"])
         self.pb.start(12)
         self.log.delete("1.0", "end")
-        self.nb.select(2)
+        self.nb.select(3)
+        self.goto_tab = 0
         steps = [("Descargando datos…", "fetch_data.py")]
-        if self.var_bt.get() or not os.path.exists(BT):
+        H = int(self.var_h.get())
+        if self.var_bt.get() or self._horizonte_guardado(BT) != H:
             steps.append(("Recalculando backtest…", "backtest_v1_vs_v2.py"))
         steps.append(("Calculando escenarios…", "xrp_scenarios_v2.py"))
-        threading.Thread(target=self._worker, args=(steps,), daemon=True).start()
+        threading.Thread(target=self._worker, args=(steps, H), daemon=True).start()
 
-    def _worker(self, steps):
-        env = dict(os.environ, PYTHONIOENCODING="utf-8", MPLBACKEND="Agg")
+    def run_verify(self):
+        """Predice desde una fecha aleatoria de hace ~15 días (solo con datos de entonces) y lo compara con el precio real."""
+        if self.running:
+            return
+        self.running = True
+        self.btn.state(["disabled"])
+        self.pb.start(12)
+        self.log.delete("1.0", "end")
+        self.nb.select(3)
+        self.goto_tab = 2
+        threading.Thread(target=self._worker, args=([("Verificando a ciegas…", "verificar.py")], int(self.var_h.get()), True),
+                         daemon=True).start()
+
+    def _horizonte_guardado(self, path=RES):
+        try:
+            return int(json.load(open(path, encoding="utf-8")).get("horizonte_dias", 7))
+        except Exception:
+            return 7 if path == RES else None
+
+    def _worker(self, steps, H, verificar=False):
+        env = dict(os.environ, PYTHONIOENCODING="utf-8", MPLBACKEND="Agg", HORIZONTE=str(H))
+        if verificar:
+            env.pop("HORIZONTE")                     # la verificación llega hasta el último día conocido
         flags = getattr(subprocess, "CREATE_NO_WINDOW", 0)
         ok, fallos = True, 0
         for label, script in steps:
@@ -279,7 +327,7 @@ class App(tk.Tk):
                                                f"Actualizado con datos guardados ({fallos} descargas fallaron).")
                         self.var_bt.set(False)
                         self.load_results()
-                        self.nb.select(0)
+                        self.nb.select(self.goto_tab)
                     else:
                         self.lbl_status.config(text="Error: revisa la pestaña Registro.")
                         messagebox.showerror("Error", "La actualización falló. Revisa la pestaña «Registro».")
