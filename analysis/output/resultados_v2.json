@@ -1,144 +1,153 @@
 {
- "modelo": "v2: HAR Garman-Klass + cuantiles conformales + trayectorias análogas",
- "horizonte_dias": 7,
- "precio": 1.50835,
- "precio_hora_utc": "2026-10-06 13:25",
- "hasta": "2026-10-13",
- "ultima_vela_cerrada": "2026-10-05",
- "ultimo_cierre": 1.5075,
- "sigma_diaria_prevista_pct": 2.771720221010994,
- "n_trayectorias_analogas": 2732,
- "cono_por_dia": {
-  "2": {
-   "P5": 1.4091719135340615,
-   "P25": 1.4736046049536498,
-   "P50": 1.5060074021458425,
-   "P75": 1.5417678491904065,
-   "P95": 1.6302066685467609
-  },
-  "4": {
-   "P5": 1.3692429532096644,
-   "P25": 1.4572106918324559,
-   "P50": 1.505643301796582,
-   "P75": 1.5552051457688083,
-   "P95": 1.6962316192197935
-  },
-  "7": {
-   "P5": 1.3255834944432736,
-   "P25": 1.4370759740369383,
-   "P50": 1.5014188444802998,
-   "P75": 1.572592134586192,
-   "P95": 1.7809541517776346
-  }
+ "modelo": "24 h: velas de 1 h, HAR Garman-Klass + cuantiles conformales con ajuste horario",
+ "horizonte_dias": 1,
+ "horizonte_texto": "24 horas",
+ "paso": "hora",
+ "precio": 1.52139,
+ "precio_hora_utc": "2026-10-06 15:06",
+ "hasta": "2026-10-07 15:06 UTC",
+ "ultima_vela_cerrada": "2026-10-06 14:00:00",
+ "sigma_diaria_prevista_pct": 2.75511198568638,
+ "sigma_horaria_prevista_pct": 0.47581029068014863,
+ "n_trayectorias_analogas": 943,
+ "cono": {
+  "etiquetas": [
+   "6 h",
+   "12 h",
+   "24 h"
+  ],
+  "P5": [
+   1.4956964277203888,
+   1.479902258788181,
+   1.4612834271352135
+  ],
+  "P25": [
+   1.5113901768848679,
+   1.5065997960231354,
+   1.4978197829954258
+  ],
+  "P50": [
+   1.5212936209491768,
+   1.5207496869339918,
+   1.5198922754651212
+  ],
+  "P75": [
+   1.5315587867802354,
+   1.5341364050502013,
+   1.5413478185394018
+  ],
+  "P95": [
+   1.5520885741664707,
+   1.561935810076025,
+   1.5872013368360132
+  ]
  },
  "niveles": {
   "soportes": [
-   1.44472,
-   1.4070738,
-   1.37785
+   1.49712,
+   1.4884766666666664,
+   1.4810240000000001
   ],
   "resistencias": [
-   1.65703,
-   1.69739
-  ],
-  "sma50": 1.4070738,
-  "sma200": 1.27976485
+   1.54459,
+   1.5574
+  ]
  },
  "escenarios": {
   "Bajista": {
-   "prob_pct": 27.5,
+   "prob_pct": 24.7,
    "rango": [
     null,
-    1.44472
+    1.49712
    ],
    "rango_80_dentro": [
-    1.2767228952318421,
-    1.436117960372419
+    1.4444889028204124,
+    1.494671307464558
    ],
-   "invalidacion": 1.65703
+   "invalidacion": 1.54459
   },
   "Base": {
-   "prob_pct": 61.5,
+   "prob_pct": 53.2,
    "rango": [
-    1.44472,
-    1.65703
+    1.49712,
+    1.54459
    ],
    "rango_80_dentro": [
-    1.4619633691639649,
-    1.6104456408491754
+    1.5039628729877352,
+    1.539151490407613
    ],
    "invalidacion": null
   },
   "Alcista": {
-   "prob_pct": 11.0,
+   "prob_pct": 22.1,
    "rango": [
-    1.65703,
+    1.54459,
     null
    ],
    "rango_80_dentro": [
-    1.6697954049632657,
-    2.1899682358365165
+    1.547888114376837,
+    1.6196742470779604
    ],
-   "invalidacion": 1.44472
+   "invalidacion": 1.49712
   }
  },
  "escenario_mas_probable": "Base",
  "simulaciones": {
   "Simulación 1": {
-   "final": 1.5324425724084674,
-   "max": 1.5324425724084674,
-   "min": 1.4831001820413234
+   "final": 1.5312643027804906,
+   "max": 1.5330849046934139,
+   "min": 1.517815049942968
   },
   "Simulación 2": {
-   "final": 1.4713970595307038,
-   "max": 1.5125431740676925,
-   "min": 1.4713970595307038
+   "final": 1.509599432006037,
+   "max": 1.5327352858577206,
+   "min": 1.5071735932613979
   }
  },
  "prob_niveles": {
-  "1.80": {
-   "cierre_final_por_encima_pct": 4.319180087847731,
-   "toca_pct": 5.527086383601757
+  "1.585": {
+   "cierre_final_por_encima_pct": 5.408271474019088,
+   "toca_pct": 8.377518557794273
   },
-  "1.70": {
-   "cierre_final_por_encima_pct": 8.125915080527086,
-   "toca_pct": 10.834553440702782
+  "1.565": {
+   "cierre_final_por_encima_pct": 11.240721102863201,
+   "toca_pct": 16.96712619300106
   },
-  "1.66": {
-   "cierre_final_por_encima_pct": 10.797950219619326,
-   "toca_pct": 14.494875549048317
+  "1.557": {
+   "cierre_final_por_encima_pct": 14.103923647932131,
+   "toca_pct": 21.633085896076352
   },
-  "1.65": {
-   "cierre_final_por_encima_pct": 11.78623718887262,
-   "toca_pct": 16.727672035139094
+  "1.545": {
+   "cierre_final_por_encima_pct": 22.057264050901377,
+   "toca_pct": 36.267232237539766
   },
-  "1.55": {
-   "cierre_final_por_encima_pct": 31.112737920937043,
-   "toca_pct": 49.450951683748166
+  "1.525": {
+   "cierre_final_por_encima_pct": 44.53870625662778,
+   "toca_pct": 78.79109225874868
   },
-  "1.50": {
-   "cierre_final_por_encima_pct": 50.76866764275256,
-   "toca_pct": 74.74377745241581
+  "1.505": {
+   "cierre_final_por_encima_pct": 68.9289501590668,
+   "toca_pct": 52.59809119830329
   },
-  "1.44": {
-   "cierre_final_por_encima_pct": 74.15812591508053,
-   "toca_pct": 37.44509516837481
+  "1.497": {
+   "cierre_final_por_encima_pct": 75.71580063626723,
+   "toca_pct": 38.812301166489924
   },
-  "1.41": {
-   "cierre_final_por_encima_pct": 82.90629575402635,
-   "toca_pct": 25.512445095168374
+  "1.488": {
+   "cierre_final_por_encima_pct": 83.24496288441145,
+   "toca_pct": 27.041357370095444
   },
-  "1.40": {
-   "cierre_final_por_encima_pct": 85.02928257686676,
-   "toca_pct": 21.559297218155198
+  "1.481": {
+   "cierre_final_por_encima_pct": 87.8048780487805,
+   "toca_pct": 19.618239660657476
   },
-  "1.38": {
-   "cierre_final_por_encima_pct": 88.65300146412885,
-   "toca_pct": 16.105417276720353
+  "1.480": {
+   "cierre_final_por_encima_pct": 88.44114528101802,
+   "toca_pct": 18.66383881230117
   },
-  "1.35": {
-   "cierre_final_por_encima_pct": 92.3865300146413,
-   "toca_pct": 10.54172767203514
+  "1.460": {
+   "cierre_final_por_encima_pct": 95.3340402969247,
+   "toca_pct": 7.104984093319194
   }
  },
  "imagen": "xrp_escenarios_v2.png"

@@ -7,7 +7,8 @@ import os
 import numpy as np, pandas as pd
 
 D = os.path.join(os.path.dirname(__file__), "data")
-H = int(os.environ.get("HORIZONTE", "7"))      # días del horizonte (7 por defecto; HORIZONTE=30 para un mes)
+_h = os.environ.get("HORIZONTE", "7")
+H = int(_h) if _h.isdigit() else 7              # días del horizonte (7 por defecto; HORIZONTE=30 para un mes)
 QS = np.array([0.05, 0.25, 0.50, 0.75, 0.95])
 MIN_TRAIN = 365          # muestras mínimas para ajustar el HAR y los cuantiles
 REFIT = 20               # reajuste del HAR cada N días
@@ -23,30 +24,33 @@ def load_xrp(incluir_hoy=False):
     return x if incluir_hoy else x.iloc[:-1]
 
 # ---------------------------------------------------------------- volatilidad HAR
-def har_features(df):
+def har_features(df, wins=(1, 7, 30, 90)):
+    """Variables HAR: varianza Garman-Klass media en varias ventanas (en velas)."""
     o, h, l, c = (np.log(df[k]) for k in ("open", "high", "low", "close"))
     gk = 0.5 * (h - l) ** 2 - (2 * np.log(2) - 1) * (c - o) ** 2     # varianza Garman-Klass
     r = c.diff()
-    gk = np.maximum(gk, 0.25 * r ** 2).clip(lower=1e-6)            # incluye saltos entre velas
-    F = pd.DataFrame({"g1": gk, "g7": gk.rolling(7).mean(), "g30": gk.rolling(30).mean(),
-                      "g90": gk.rolling(90).mean(), "r30": (r ** 2).rolling(30).mean()})
-    return np.log(F), r
+    gk = np.maximum(gk, 0.25 * r ** 2).clip(lower=1e-6 if wins[0] == 1 and wins[-1] <= 90 else 1e-9)
+    F = pd.DataFrame({f"g{w}": gk.rolling(w).mean() for w in wins})
+    F[f"r{wins[2]}"] = (r ** 2).rolling(wins[2]).mean()
+    return np.log(F.clip(lower=1e-12)), r
 
-def har_sigma(df, h=H):
-    """sigma diaria prevista para los próximos h días (walk-forward)."""
-    F, r = har_features(df)
+def har_sigma(df, h=H, wins=(1, 7, 30, 90), min_train=None, refit=None):
+    """sigma por vela prevista para las próximas h velas (walk-forward, solo datos pasados)."""
+    min_train = MIN_TRAIN if min_train is None else min_train
+    refit = REFIT if refit is None else refit
+    F, r = har_features(df, wins)
     n = len(df)
     fut = (r ** 2).rolling(h).mean().shift(-h).values            # varianza realizada futura
-    y = np.log(np.maximum(fut, 1e-8))
+    y = np.log(np.maximum(fut, 1e-12))
     X = np.column_stack([np.ones(n), F.values])
     ok = np.isfinite(X).all(1)
     pred = np.full(n, np.nan); beta = None
     for t in range(n):
         if not ok[t]:
             continue
-        if beta is None or t % REFIT == 0:
+        if beta is None or t % refit == 0:
             idx = np.where(ok[: max(t - h + 1, 0)] & np.isfinite(y[: max(t - h + 1, 0)]))[0]
-            if len(idx) >= MIN_TRAIN:
+            if len(idx) >= min_train:
                 beta = np.linalg.lstsq(X[idx], y[idx], rcond=None)[0]
         if beta is not None:
             pred[t] = X[t] @ beta

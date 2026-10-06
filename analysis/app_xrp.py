@@ -86,14 +86,15 @@ class App(tk.Tk):
         bar.pack(fill="x", padx=16, pady=(0, 6))
         top = bar                                   # los controles van en una segunda fila
         ttk.Button(top, text="Abrir carpeta de resultados", command=self.open_folder).pack(side="right", padx=(8, 0))
-        ttk.Button(top, text="Verificar a ciegas (hace ~15 días)", command=self.run_verify).pack(side="left")
+        ttk.Button(top, text="Verificar a ciegas", command=self.run_verify).pack(side="left")
         self.var_bt = tk.BooleanVar(value=not os.path.exists(BT))
         ttk.Checkbutton(top, text="Recalcular backtest (≈20 s)", variable=self.var_bt).pack(side="right", padx=8)
         self.btn = ttk.Button(top, text="⟳  Actualizar análisis", style="Accent.TButton", command=self.run_update)
         self.btn.pack(side="right")
         self.var_h = tk.StringVar(value=str(self._horizonte_guardado()))
-        ttk.Combobox(top, textvariable=self.var_h, values=["7", "14", "30"], width=4, state="readonly").pack(side="right", padx=(4, 10))
-        tk.Label(top, text="Horizonte (días):", bg=BG, fg=INK, font=(FONT, 10)).pack(side="right")
+        ttk.Combobox(top, textvariable=self.var_h, values=["24 h", "7 días", "14 días", "30 días"], width=8,
+                     state="readonly").pack(side="right", padx=(4, 10))
+        tk.Label(top, text="Horizonte:", bg=BG, fg=INK, font=(FONT, 10)).pack(side="right")
 
         body = tk.PanedWindow(self, orient="horizontal", bg=BG, sashwidth=6, bd=0)
         body.pack(fill="both", expand=True, padx=16, pady=6)
@@ -181,16 +182,17 @@ class App(tk.Tk):
         msg = "Aún no hay resultados.\nPulsa «Actualizar análisis»."
         self.show_image(self.fig_esc, self.cv_esc, IMG_ESC, msg)
         self.show_image(self.fig_cal, self.cv_cal, IMG_CAL, "Marca «Recalcular backtest» y pulsa Actualizar.")
-        self.show_image(self.fig_ver, self.cv_ver, IMG_VER, "Pulsa «Verificar a ciegas» para comprobar el modelo\ncontra el precio real de las últimas dos semanas.")
+        self.show_image(self.fig_ver, self.cv_ver, IMG_VER, "Pulsa «Verificar a ciegas» para comprobar el modelo\ncontra el precio real que siguió.")
         if not os.path.exists(RES):
             return
         r = json.load(open(RES, encoding="utf-8"))
         self.lbl_price.config(text=f"{r['precio']:.4f} $")
-        H = r.get("horizonte_dias", 7)
-        self.title(f"XRP · Escenarios a {H} días")
-        self.lbl_date.config(text=f"a las {r['precio_hora_utc']} UTC (Bitstamp) · horizonte {H} días, hasta el {r['hasta']} · "
+        HT = r.get("horizonte_texto", f"{r.get('horizonte_dias', 7)} días")
+        dec = 4 if r.get("paso") == "hora" else 3
+        self.title(f"XRP · Escenarios a {HT}")
+        self.lbl_date.config(text=f"a las {r['precio_hora_utc']} UTC (Bitstamp) · horizonte {HT}, hasta el {r['hasta']} · "
                                   f"σ diaria prevista {r['sigma_diaria_prevista_pct']:.2f} %")
-        self.lbl_lv.config(text=f"PROBABILIDAD POR NIVEL ({H} DÍAS)")
+        self.lbl_lv.config(text=f"PROBABILIDAD POR NIVEL ({HT.upper()})")
 
         for w in self.sc_frame.winfo_children():
             w.destroy()
@@ -198,7 +200,7 @@ class App(tk.Tk):
             row = tk.Frame(self.sc_frame, bg=CARD)
             row.pack(fill="x", padx=12, pady=6)
             lo, hi = s["rango"]
-            rng = f"< {hi:.3f} $" if lo is None else (f"> {lo:.3f} $" if hi is None else f"{lo:.3f} – {hi:.3f} $")
+            rng = f"< {hi:.{dec}f} $" if lo is None else (f"> {lo:.{dec}f} $" if hi is None else f"{lo:.{dec}f} – {hi:.{dec}f} $")
             tk.Label(row, text=name, width=8, anchor="w", bg=CARD, fg=INK, font=(FONT, 11, "bold")).pack(side="left")
             bar = tk.Canvas(row, width=130, height=14, bg=CARD, highlightthickness=0)
             bar.pack(side="left", padx=6)
@@ -208,26 +210,27 @@ class App(tk.Tk):
             tk.Label(row, text=rng, anchor="e", bg=CARD, fg=MUTED, font=(FONT, 10)).pack(side="right")
         sims = r.get("simulaciones", {})
         if sims:
-            txt = " · ".join(f"{k}: {v['final']:.3f} $" for k, v in sims.items())
-            tk.Label(self.sc_frame, text=f"Ejemplos típicos día {H} → {txt}", bg=CARD, fg=MUTED,
+            txt = " · ".join(f"{k}: {v['final']:.{dec}f} $" for k, v in sims.items())
+            tk.Label(self.sc_frame, text=f"Ejemplos típicos al final ({HT}) → {txt}", bg=CARD, fg=MUTED,
                      font=(FONT, 9), anchor="w").pack(fill="x", padx=12, pady=(0, 8))
 
         self.tv_cone.delete(*self.tv_cone.get_children())
-        dias = sorted(r["cono_por_dia"], key=int)[-3:]
-        cols = ("a", "b", "c")[-len(dias):]
+        cono = r["cono"]
+        etq = cono["etiquetas"][-3:]
+        cols = ("a", "b", "c")[-len(etq):]
         for col in ("a", "b", "c"):
             self.tv_cone.heading(col, text="")
-        for col, d in zip(cols, dias):
-            self.tv_cone.heading(col, text=f"Día {d}")
-        for k in r["cono_por_dia"][dias[0]]:
-            vals = [""] * (3 - len(dias)) + [f"{r['cono_por_dia'][d][k]:.3f} $" for d in dias]
+        for col, e in zip(cols, etq):
+            self.tv_cone.heading(col, text=e)
+        for k in ("P5", "P25", "P50", "P75", "P95"):
+            vals = [""] * (3 - len(etq)) + [f"{v:.{dec}f} $" for v in cono[k][-3:]]
             self.tv_cone.insert("", "end", values=(k, *vals))
         self.tv_lv.delete(*self.tv_lv.get_children())
         for lv, v in sorted(r["prob_niveles"].items(), key=lambda kv: -float(kv[0])):
             self.tv_lv.insert("", "end", values=(lv, f"{v['toca_pct']:.0f} %", f"{v['cierre_final_por_encima_pct']:.0f} %"))
 
         b = json.load(open(BT, encoding="utf-8")) if os.path.exists(BT) else None
-        if b and b.get("horizonte_dias") == H:
+        if b and b.get("horizonte_texto", f"{b.get('horizonte_dias')} días") == HT:
             per = [k for k in b if k.startswith("desde")]
             lines = []
             for p in per:
@@ -236,8 +239,8 @@ class App(tk.Tk):
                              f"por encima del P95 → v2 {v2['bandas_pct']['>P95']:.0f} % (ideal 5 %).")
             d = b.get("direccion")
             if d:
-                lines.append(f"Dirección a {H} días: ningún modelo probado acierta de forma fiable "
-                             f"(logística {d['logistica_acierto_pct']:.0f} %, peor que la referencia en Brier).")
+                lines.append(f"Dirección a {HT}: ningún modelo probado acierta de forma fiable "
+                             f"(acierto {d['logistica_acierto_pct']:.0f} %, como tirar una moneda).")
             self.lbl_cal.config(text="\n".join(lines))
         else:
             self.lbl_cal.config(text="Sin backtest para este horizonte: marca «Recalcular backtest» y pulsa Actualizar.")
@@ -253,10 +256,12 @@ class App(tk.Tk):
         self.nb.select(3)
         self.goto_tab = 0
         steps = [("Descargando datos…", "fetch_data.py")]
-        H = int(self.var_h.get())
-        if self.var_bt.get() or self._horizonte_guardado(BT) != H:
-            steps.append(("Recalculando backtest…", "backtest_v1_vs_v2.py"))
-        steps.append(("Calculando escenarios…", "xrp_scenarios_v2.py"))
+        Hs = self.var_h.get()
+        H = 1 if Hs == "24 h" else int(Hs.split()[0])
+        horas = Hs == "24 h"
+        if self.var_bt.get() or self._horizonte_guardado(BT) != Hs:
+            steps.append(("Recalculando backtest…", "xrp_24h.py --backtest" if horas else "backtest_v1_vs_v2.py"))
+        steps.append(("Calculando escenarios…", "xrp_24h.py" if horas else "xrp_scenarios_v2.py"))
         threading.Thread(target=self._worker, args=(steps, H), daemon=True).start()
 
     def run_verify(self):
@@ -269,14 +274,18 @@ class App(tk.Tk):
         self.log.delete("1.0", "end")
         self.nb.select(3)
         self.goto_tab = 2
-        threading.Thread(target=self._worker, args=([("Verificando a ciegas…", "verificar.py")], int(self.var_h.get()), True),
-                         daemon=True).start()
+        script = "xrp_24h.py --verificar" if self.var_h.get() == "24 h" else "verificar.py"
+        threading.Thread(target=self._worker, args=([("Verificando a ciegas…", script)], 7, True), daemon=True).start()
 
     def _horizonte_guardado(self, path=RES):
+        """Horizonte de unos resultados guardados, con el texto del desplegable ("24 h", "7 días"…)."""
         try:
-            return int(json.load(open(path, encoding="utf-8")).get("horizonte_dias", 7))
+            d = json.load(open(path, encoding="utf-8"))
+            if d.get("horizonte_texto") == "24 horas":
+                return "24 h"
+            return f"{int(d.get('horizonte_dias', 7))} días"
         except Exception:
-            return 7 if path == RES else None
+            return "24 h" if path == RES else None
 
     def _worker(self, steps, H, verificar=False):
         env = dict(os.environ, PYTHONIOENCODING="utf-8", MPLBACKEND="Agg", HORIZONTE=str(H))
@@ -288,7 +297,8 @@ class App(tk.Tk):
             self.q.put(("status", label))
             self.q.put(("log", f"\n=== {label} ({script}) ===\n"))
             try:
-                p = subprocess.Popen([python_cmd(), os.path.join(HERE, script)], cwd=os.path.dirname(HERE),
+                nombre, *args = script.split()
+                p = subprocess.Popen([python_cmd(), os.path.join(HERE, nombre), *args], cwd=os.path.dirname(HERE),
                                      stdout=subprocess.PIPE, stderr=subprocess.STDOUT, env=env,
                                      creationflags=flags, text=True, encoding="utf-8", errors="replace")
                 for line in p.stdout:

@@ -9,10 +9,10 @@ def get(url):
     with urllib.request.urlopen(req, timeout=30) as r:
         return json.loads(r.read())
 
-def bitstamp(pair, start=1514764800):
+def bitstamp(pair, start=1514764800, step=86400):
     rows, t = {}, start
     while True:
-        d = get(f"https://www.bitstamp.net/api/v2/ohlc/{pair}/?step=86400&limit=1000&start={t}")
+        d = get(f"https://www.bitstamp.net/api/v2/ohlc/{pair}/?step={step}&limit=1000&start={t}")
         data = d["data"]["ohlc"]
         if not data:
             break
@@ -21,7 +21,7 @@ def bitstamp(pair, start=1514764800):
         last = int(data[-1]["timestamp"])
         if last <= t or len(data) < 1000:
             break
-        t = last + 86400
+        t = last + step
         time.sleep(1)
     return rows
 
@@ -40,6 +40,8 @@ def save(name, rows):
 
 jobs = [
     ("bitstamp_xrpusd_1d.csv", lambda: bitstamp("xrpusd")),
+    # velas de 1 hora de los últimos ~3 años (modelo de 24 horas)
+    ("bitstamp_xrpusd_1h.csv", lambda: bitstamp("xrpusd", int(time.time()) - 3 * 365 * 86400, 3600)),
     ("bitstamp_btcusd_1d.csv", lambda: bitstamp("btcusd")),
     ("bitstamp_ethusd_1d.csv", lambda: bitstamp("ethusd")),
     ("bitstamp_solusd_1d.csv", lambda: bitstamp("solusd", 1609459200)),
