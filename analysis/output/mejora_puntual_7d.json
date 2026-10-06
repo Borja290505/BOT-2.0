@@ -1,0 +1,54 @@
+{
+ "horizonte_dias": 7,
+ "n_fechas": 2310,
+ "desde": "2020-06-01",
+ "hasta": "2026-09-27",
+ "sin_cambio": {
+  "error_medio_pct": 8.57,
+  "error_mediano_pct": 5.5,
+  "acierto_±1%_pct": 10.1,
+  "acierto_±3%_pct": 30.1,
+  "direccion_acierto_pct": null,
+  "error_medio_2024+_pct": 7.31
+ },
+ "mediana_v2": {
+  "error_medio_pct": 8.56,
+  "error_mediano_pct": 5.45,
+  "acierto_±1%_pct": 10.3,
+  "acierto_±3%_pct": 29.8,
+  "direccion_acierto_pct": 51.3,
+  "error_medio_2024+_pct": 7.27
+ },
+ "momentum_7": {
+  "error_medio_pct": 13.26,
+  "error_mediano_pct": 9.17,
+  "acierto_±1%_pct": 6.2,
+  "acierto_±3%_pct": 18.1,
+  "direccion_acierto_pct": 46.5,
+  "error_medio_2024+_pct": 11.16
+ },
+ "reversion_7": {
+  "error_medio_pct": 9.69,
+  "error_mediano_pct": 6.13,
+  "acierto_±1%_pct": 9.0,
+  "acierto_±3%_pct": 26.6,
+  "direccion_acierto_pct": 53.5,
+  "error_medio_2024+_pct": 7.89
+ },
+ "ridge": {
+  "error_medio_pct": 9.1,
+  "error_mediano_pct": 6.1,
+  "acierto_±1%_pct": 9.4,
+  "acierto_±3%_pct": 26.8,
+  "direccion_acierto_pct": 48.4,
+  "error_medio_2024+_pct": 7.65
+ },
+ "gboost": {
+  "error_medio_pct": 9.54,
+  "error_mediano_pct": 6.44,
+  "acierto_±1%_pct": 9.0,
+  "acierto_±3%_pct": 25.8,
+  "direccion_acierto_pct": 51.2,
+  "error_medio_2024+_pct": 7.94
+ }
+}

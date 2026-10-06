@@ -18,6 +18,7 @@ RES = os.path.join(OUT, "resultados_v2.json")
 BT = os.path.join(OUT, "backtest_v1_vs_v2.json")
 IMG_ESC = os.path.join(OUT, "xrp_escenarios_v2.png")
 IMG_CAL = os.path.join(OUT, "xrp_calibracion_v1_vs_v2.png")
+IMG_VER = os.path.join(OUT, "verificacion.png")
 
 BG, CARD, INK, MUTED, LINE = "#fcfcfb", "#ffffff", "#0b0b0b", "#52514e", "#e6e5e0"
 COL = {"Bajista": "#e34948", "Base": "#2a78d6", "Alcista": "#1baf7a"}
@@ -85,6 +86,7 @@ class App(tk.Tk):
         bar.pack(fill="x", padx=16, pady=(0, 6))
         top = bar                                   # los controles van en una segunda fila
         ttk.Button(top, text="Abrir carpeta de resultados", command=self.open_folder).pack(side="right", padx=(8, 0))
+        ttk.Button(top, text="Verificar a ciegas (hace ~15 días)", command=self.run_verify).pack(side="left")
         self.var_bt = tk.BooleanVar(value=not os.path.exists(BT))
         ttk.Checkbutton(top, text="Recalcular backtest (≈20 s)", variable=self.var_bt).pack(side="right", padx=8)
         self.btn = ttk.Button(top, text="⟳  Actualizar análisis", style="Accent.TButton", command=self.run_update)
@@ -122,6 +124,7 @@ class App(tk.Tk):
         nb.pack(fill="both", expand=True)
         self.fig_esc, self.cv_esc = self._figure_tab(nb, "Gráfico de escenarios")
         self.fig_cal, self.cv_cal = self._figure_tab(nb, "Calibración v1 vs v2")
+        self.fig_ver, self.cv_ver = self._figure_tab(nb, "Verificación a ciegas")
         logf = tk.Frame(nb, bg=BG)
         nb.add(logf, text="Registro")
         self.log = tk.Text(logf, bg=CARD, fg=INK, font=("Consolas" if sys.platform.startswith("win") else "DejaVu Sans Mono", 9),
@@ -178,6 +181,7 @@ class App(tk.Tk):
         msg = "Aún no hay resultados.\nPulsa «Actualizar análisis»."
         self.show_image(self.fig_esc, self.cv_esc, IMG_ESC, msg)
         self.show_image(self.fig_cal, self.cv_cal, IMG_CAL, "Marca «Recalcular backtest» y pulsa Actualizar.")
+        self.show_image(self.fig_ver, self.cv_ver, IMG_VER, "Pulsa «Verificar a ciegas» para comprobar el modelo\ncontra el precio real de las últimas dos semanas.")
         if not os.path.exists(RES):
             return
         r = json.load(open(RES, encoding="utf-8"))
@@ -246,7 +250,8 @@ class App(tk.Tk):
         self.btn.state(["disabled"])
         self.pb.start(12)
         self.log.delete("1.0", "end")
-        self.nb.select(2)
+        self.nb.select(3)
+        self.goto_tab = 0
         steps = [("Descargando datos…", "fetch_data.py")]
         H = int(self.var_h.get())
         if self.var_bt.get() or self._horizonte_guardado(BT) != H:
@@ -254,14 +259,29 @@ class App(tk.Tk):
         steps.append(("Calculando escenarios…", "xrp_scenarios_v2.py"))
         threading.Thread(target=self._worker, args=(steps, H), daemon=True).start()
 
+    def run_verify(self):
+        """Predice desde una fecha aleatoria de hace ~15 días (solo con datos de entonces) y lo compara con el precio real."""
+        if self.running:
+            return
+        self.running = True
+        self.btn.state(["disabled"])
+        self.pb.start(12)
+        self.log.delete("1.0", "end")
+        self.nb.select(3)
+        self.goto_tab = 2
+        threading.Thread(target=self._worker, args=([("Verificando a ciegas…", "verificar.py")], int(self.var_h.get()), True),
+                         daemon=True).start()
+
     def _horizonte_guardado(self, path=RES):
         try:
             return int(json.load(open(path, encoding="utf-8")).get("horizonte_dias", 7))
         except Exception:
             return 7 if path == RES else None
 
-    def _worker(self, steps, H):
+    def _worker(self, steps, H, verificar=False):
         env = dict(os.environ, PYTHONIOENCODING="utf-8", MPLBACKEND="Agg", HORIZONTE=str(H))
+        if verificar:
+            env.pop("HORIZONTE")                     # la verificación llega hasta el último día conocido
         flags = getattr(subprocess, "CREATE_NO_WINDOW", 0)
         ok, fallos = True, 0
         for label, script in steps:
@@ -307,7 +327,7 @@ class App(tk.Tk):
                                                f"Actualizado con datos guardados ({fallos} descargas fallaron).")
                         self.var_bt.set(False)
                         self.load_results()
-                        self.nb.select(0)
+                        self.nb.select(self.goto_tab)
                     else:
                         self.lbl_status.config(text="Error: revisa la pestaña Registro.")
                         messagebox.showerror("Error", "La actualización falló. Revisa la pestaña «Registro».")
