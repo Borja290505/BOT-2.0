@@ -144,4 +144,4 @@ def guardar_datos_grafico(path, hist, fut, q, P0, sims, sup, res_, escenarios, t
                         for k, v in escenarios.items()}}
     if extra:
         d.update(extra)
-    json.dump(d, open(path, "w"), ensure_ascii=False)
+    json.dump(d, open(path, "w", encoding="utf-8"), ensure_ascii=False)

@@ -63,4 +63,4 @@ out["direccion"] = dir_out
 out["horizonte_dias"] = H
 out["hasta"] = str(rows[-1]["fecha"].date())
 print(json.dumps(out, indent=1, ensure_ascii=False))
-json.dump(out, open(os.path.join(os.path.dirname(__file__), "output", "backtest_v1_vs_v2.json"), "w"), indent=1, ensure_ascii=False)
+json.dump(out, open(os.path.join(os.path.dirname(__file__), "output", "backtest_v1_vs_v2.json"), "w", encoding="utf-8"), indent=1, ensure_ascii=False)
