@@ -135,6 +135,10 @@ hist_n = 90 if H <= 10 else 180
 hx = c[-hist_n:]
 fut = pd.date_range(ahora, periods=H + 1, freq="D")
 band = lambda p: np.concatenate([[P0], q[p]])
+m.guardar_datos_grafico(os.path.join(OUT, "grafico_datos.json"), pd.concat([hx, pd.Series([P0], index=[ahora])]),
+                        fut, q, P0, sims, SUP, RES, SC, f"XRP/USD — próximos {H} días", "dia",
+                        {"sma50": {"t": [t.strftime("%Y-%m-%dT%H:%M:%S") for t in hx.index],
+                                   "p": [float(v) for v in c.rolling(50).mean()[-hist_n:]]}})
 span = hist_n + H
 dd = lambda f: pd.Timedelta(days=span * f)
 fig, ax = plt.subplots(figsize=(13, 7.2), dpi=150)
