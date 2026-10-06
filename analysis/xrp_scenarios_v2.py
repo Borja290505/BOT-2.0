@@ -25,7 +25,7 @@ xa = m.load_xrp(incluir_hoy=True)                  # incluye la vela de hoy: da 
 c = x.close; lc = np.log(c.values); n = len(lc)
 P0 = float(xa.close.iloc[-1])                      # último precio negociado al descargar los datos
 meta_p = os.path.join(m.D, "meta.json")
-descargado = json.load(open(meta_p))["descargado_utc"] if os.path.exists(meta_p) else None
+descargado = json.load(open(meta_p, encoding="utf-8"))["descargado_utc"] if os.path.exists(meta_p) else None
 ahora = pd.Timestamp(descargado) if descargado else xa.index[-1]
 ahora = ahora.tz_localize(None) if ahora.tzinfo else ahora
 
@@ -107,7 +107,7 @@ dias_tabla = sorted({max(1, round(H / 4)), max(1, round(H / 2)), H})
 grid = np.round(np.linspace(q[5][-1], q[95][-1], 7) / 0.05) * 0.05
 levels = sorted({round(float(v), 2) for v in list(grid) + SUP + RES if v > 0}, reverse=True)
 bt_path = os.path.join(OUT, "backtest_v1_vs_v2.json")
-bt = json.load(open(bt_path)) if os.path.exists(bt_path) else None
+bt = json.load(open(bt_path, encoding="utf-8")) if os.path.exists(bt_path) else None
 if bt and bt.get("horizonte_dias") != H:
     bt = None                                          # backtest de otro horizonte: no se muestra
 
@@ -128,7 +128,7 @@ res = {"modelo": "v2: HAR Garman-Klass + cuantiles conformales + trayectorias an
                                      "toca_pct": float(((paths.max(1) >= L) if L > P0 else (paths.min(1) <= L)).mean() * 100)}
                         for L in levels},
        "imagen": IMG}
-json.dump(res, open(os.path.join(OUT, "resultados_v2.json"), "w"), indent=1, ensure_ascii=False)
+json.dump(res, open(os.path.join(OUT, "resultados_v2.json"), "w", encoding="utf-8"), indent=1, ensure_ascii=False)
 
 # ---------------------------------------------------------------- gráfico
 hist_n = 90 if H <= 10 else 180

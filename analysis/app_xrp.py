@@ -2,7 +2,7 @@
 Aplicación de escritorio para el análisis de escenarios de XRP.
 Ábrela con doble clic en "Abrir_XRP.bat" (Windows) o con:  python analysis/app_xrp.py
 """
-import json, os, subprocess, sys, threading, queue
+import json, os, subprocess, sys, threading, queue, time, traceback, urllib.request
 from datetime import datetime, timezone
 import tkinter as tk
 from tkinter import ttk, messagebox
@@ -22,6 +22,19 @@ BT = os.path.join(OUT, "backtest_v1_vs_v2.json")
 IMG_ESC = os.path.join(OUT, "xrp_escenarios_v2.png")
 DATOS_GRAF = os.path.join(OUT, "grafico_datos.json")
 DIAS = ["lun", "mar", "mié", "jue", "vie", "sáb", "dom"]
+TICKER = "https://www.bitstamp.net/api/v2/ticker/xrpusd/"
+SEG_DIRECTO = 10                                  # cada cuánto se consulta el precio en directo
+MIN_RECALCULO = {"24 h": 15}                      # minutos entre recálculos automáticos (60 en los demás modos)
+
+
+def leer_json(path):
+    """Lee un JSON en UTF-8; si se guardó con la codificación de Windows (versiones antiguas), también."""
+    try:
+        with open(path, encoding="utf-8") as f:
+            return json.load(f)
+    except UnicodeDecodeError:
+        with open(path, encoding="cp1252") as f:
+            return json.load(f)
 IMG_CAL = os.path.join(OUT, "xrp_calibracion_v1_vs_v2.png")
 IMG_VER = os.path.join(OUT, "verificacion.png")
 
@@ -53,10 +66,28 @@ class App(tk.Tk):
             pass
         self.q = queue.Queue()
         self.running = False
+        self.auto = False                          # actualización lanzada por el modo en directo
+        self.pendiente = False
+        self.live = []                             # [(fecha UTC, precio)] recibidos en directo
+        self.live_fetching = False
+        self.hovering = False
+        self.ultima_act = time.monotonic()
+        self.goto_tab = 0
         self._style()
         self._build()
         self.load_results()
         self.after(150, self._poll)
+        self.after(1500, self._tick_live)
+
+    def report_callback_exception(self, exc, val, tb):
+        """Cualquier error de la interfaz se muestra (con pythonw no hay consola donde verlo)."""
+        txt = "".join(traceback.format_exception(exc, val, tb))
+        try:
+            self.log.insert("end", "\n✗ Error en la app:\n" + txt)
+            self.lbl_status.config(text="Error: revisa la pestaña Registro.")
+        except Exception:
+            pass
+        messagebox.showerror("Error en la app", f"{val}\n\nEl detalle está en la pestaña «Registro».")
 
     # ------------------------------------------------------------------ estilo
     def _style(self):
@@ -97,8 +128,13 @@ class App(tk.Tk):
         self.btn = ttk.Button(top, text="⟳  Actualizar análisis", style="Accent.TButton", command=self.run_update)
         self.btn.pack(side="right")
         self.var_h = tk.StringVar(value=str(self._horizonte_guardado()))
-        ttk.Combobox(top, textvariable=self.var_h, values=["24 h", "7 días", "14 días", "30 días"], width=8,
-                     state="readonly").pack(side="right", padx=(4, 10))
+        self.cb_h = ttk.Combobox(top, textvariable=self.var_h, values=["24 h", "7 días", "14 días", "30 días"], width=8,
+                                 state="readonly")
+        self.cb_h.pack(side="right", padx=(4, 10))
+        self.cb_h.bind("<<ComboboxSelected>>", lambda e: self.run_update())   # cambiar de modo recalcula
+        self.var_live = tk.BooleanVar(value=True)
+        ttk.Checkbutton(top, text="En directo",
+                        variable=self.var_live).pack(side="left", padx=(12, 0))
         tk.Label(top, text="Horizonte:", bg=BG, fg=INK, font=(FONT, 10)).pack(side="right")
 
         body = tk.PanedWindow(self, orient="horizontal", bg=BG, sashwidth=6, bd=0)
@@ -130,7 +166,7 @@ class App(tk.Tk):
         nb.pack(fill="both", expand=True)
         self.fig_esc, self.cv_esc = self._figure_tab(nb, "Gráfico de escenarios", cabecera=True)
         self.cv_esc.mpl_connect("motion_notify_event", self._on_hover)
-        self.cv_esc.mpl_connect("axes_leave_event", lambda e: self._hover_reset())
+        self.cv_esc.mpl_connect("axes_leave_event", lambda e: (setattr(self, "hovering", False), self._hover_reset()))
         self.graf = None
         self.fig_cal, self.cv_cal = self._figure_tab(nb, "Calibración v1 vs v2")
         self.fig_ver, self.cv_ver = self._figure_tab(nb, "Verificación a ciegas")
@@ -195,7 +231,7 @@ class App(tk.Tk):
     # ------------------------------------------------------------------ gráfico interactivo
     def draw_interactive(self):
         """Dibuja el gráfico de escenarios con datos reales: al pasar el ratón muestra fecha y precios."""
-        d = json.load(open(DATOS_GRAF, encoding="utf-8"))
+        d = leer_json(DATOS_GRAF)
         ht = np.array([np.datetime64(t) for t in d["historico"]["t"]]).astype("datetime64[s]").astype(object)
         ft = np.array([np.datetime64(t) for t in d["futuro"]["t"]]).astype("datetime64[s]").astype(object)
         hp = np.array(d["historico"]["p"]); fu = {k: np.array(v) for k, v in d["futuro"].items() if k != "t"}
@@ -216,6 +252,8 @@ class App(tk.Tk):
             st = np.array([np.datetime64(t) for t in d["sma50"]["t"]]).astype("datetime64[s]").astype(object)
             ax.plot(st, d["sma50"]["p"], color="#8a8984", lw=1, label="SMA 50")
         ax.plot(ht, hp, color=INK, lw=1.5, label="Precio XRP/USD")
+        self.live_line, = ax.plot([], [], color="#d1342f", lw=2.2, label="Precio en directo", zorder=6)
+        self.live_dot, = ax.plot([], [], "o", ms=8, color="#d1342f", mec=BG, mew=2, zorder=7)
         for j, v in enumerate(d["soportes"]):
             ax.axhline(v, color="#008300", lw=0.8, ls=(0, (4, 3)), alpha=0.7)
             ax.text(1.002, v, f"S{j+1} {v:.{dec}f}", transform=ax.get_yaxis_transform(), fontsize=8, color="#008300", va="center")
@@ -237,8 +275,69 @@ class App(tk.Tk):
                                  bbox=dict(boxstyle="round,pad=0.4", fc="#ffffff", ec=LINE, alpha=0.95), zorder=10)
         self.graf = dict(ax=ax, ht=ht, hp=hp, ft=ft, fu=fu, sims=sims, dec=dec, horas=horas,
                          hn=mdates.date2num(ht), fn=mdates.date2num(ft))
+        self._pintar_directo()
         self._hover_reset()
         self.cv_esc.draw_idle()
+
+    # ------------------------------------------------------------------ precio en directo
+    def _tick_live(self):
+        """Cada pocos segundos pide el último precio; cada 15/60 min recalcula el análisis."""
+        if self.var_live.get():
+            if not self.live_fetching:
+                self.live_fetching = True
+                threading.Thread(target=self._fetch_live, daemon=True).start()
+            minutos = MIN_RECALCULO.get(self.var_h.get(), 60)
+            if not self.running and time.monotonic() - self.ultima_act > minutos * 60:
+                self.run_update(auto=True)
+        self.after(SEG_DIRECTO * 1000, self._tick_live)
+
+    def _obtener_precio(self):
+        req = urllib.request.Request(TICKER, headers={"User-Agent": "Mozilla/5.0"})
+        with urllib.request.urlopen(req, timeout=8) as r:
+            d = json.loads(r.read())
+        return datetime.fromtimestamp(int(d["timestamp"]), timezone.utc).replace(tzinfo=None), float(d["last"])
+
+    def _fetch_live(self):
+        try:
+            self.q.put(("live", self._obtener_precio()))
+        except Exception as e:
+            self.q.put(("live_err", str(e)))
+
+    def _nuevo_precio(self, t, p):
+        prev = self.live[-1][1] if self.live else None
+        if not self.live or t > self.live[-1][0]:
+            self.live.append((t, p))
+            self.live = self.live[-5000:]
+        flecha, color = ("▲", "#0a7d32") if prev is not None and p > prev else (("▼", "#d1342f") if prev is not None and p < prev else ("", INK))
+        self.lbl_price.config(text=f"{p:.4f} $ {flecha}", fg=color)
+        self._pintar_directo()
+        if not self.hovering:
+            self._hover_reset()
+
+    def _pintar_directo(self):
+        g = self.graf
+        if not g or not hasattr(self, "live_line"):
+            return
+        pts = [(t, p) for t, p in self.live if t >= g["ft"][0]]
+        if pts:
+            ts, ps = zip(*pts)
+            self.live_line.set_data([g["ft"][0], *ts], [g["hp"][-1], *ps])
+            self.live_dot.set_data([ts[-1]], [ps[-1]])
+        else:
+            self.live_line.set_data([], []); self.live_dot.set_data([], [])
+        self.cv_esc.draw_idle()
+
+    def _percentil_directo(self, t, p):
+        """Dónde cae el precio en directo dentro del cono previsto para ese momento."""
+        g = self.graf
+        x = mdates.date2num(t)
+        qs = [float(np.interp(x, g["fn"], g["fu"][k])) for k in ("P5", "P25", "P50", "P75", "P95")]
+        if p < qs[0]:
+            return "por debajo del P5 (fuera del rango del 90 %)"
+        if p > qs[-1]:
+            return "por encima del P95 (fuera del rango del 90 %)"
+        pc = float(np.interp(p, qs, [5, 25, 50, 75, 95]))
+        return f"percentil {pc:.0f} del cono" + (" (dentro del rango del 50 %)" if 25 <= pc <= 75 else "")
 
     def _fecha(self, t):
         """Fecha UTC → texto en la hora local del ordenador."""
@@ -252,16 +351,27 @@ class App(tk.Tk):
             return
         for a in [self.h_vline, self.h_box, *self.h_pts.values()]:
             a.set_visible(False)
-        fin = g["ft"][-1]
-        s1, s2 = (v[-1] for v in g["sims"].values())
-        self.lbl_hover.config(text=f"Ahora: {self._fecha(g['ft'][0])}  ·  Precio {g['hp'][-1]:.{g['dec']}f} $  "
-                                   f"(pasa el ratón por el gráfico para ver fecha y precios)")
+        dec = g["dec"]
+        pts = [(t, p) for t, p in self.live if t >= g["ft"][0]]
+        if pts and self.var_live.get():
+            t, p = pts[-1]
+            loc = t.replace(tzinfo=timezone.utc).astimezone()
+            var = (p / g["hp"][-1] - 1) * 100
+            texto = (f"EN DIRECTO {DIAS[loc.weekday()]} {loc:%d-%m-%Y %H:%M:%S}  ·  Precio {p:.{dec}f} $  ·  "
+                     f"{var:+.2f} % desde la previsión  ·  {self._percentil_directo(t, p)}")
+            if t > g["ft"][-1]:
+                texto += "  ·  la previsión ya ha caducado: pulsa Actualizar"
+        else:
+            texto = (f"Previsión hecha el {self._fecha(g['ft'][0])}  ·  Precio {g['hp'][-1]:.{dec}f} $  "
+                     f"(pasa el ratón por el gráfico para ver fecha y precios)")
+        self.lbl_hover.config(text=texto)
         self.cv_esc.draw_idle()
 
     def _on_hover(self, ev):
         g = self.graf
         if not g or ev.inaxes is not g["ax"] or ev.xdata is None:
             return
+        self.hovering = True
         dec = g["dec"]
         for p in self.h_pts.values():
             p.set_data([], [])
@@ -283,6 +393,13 @@ class App(tk.Tk):
             linea = f"{paso}  ·  Sim. 1: {s1:.{dec}f} $  ·  Sim. 2: {s2:.{dec}f} $  ·  Mediana: {y:.{dec}f} $"
             caja = (f"{self._fecha(t)} ({paso})\nSimulación 1: {s1:.{dec}f} $\nSimulación 2: {s2:.{dec}f} $\n"
                     f"Mediana: {y:.{dec}f} $\nRango 90 %: {lo:.{dec}f} – {hi:.{dec}f} $")
+            # precio real en directo cerca de ese momento (si ya ha llegado)
+            paso_td = (g["fn"][1] - g["fn"][0]) / 2 if len(g["fn"]) > 1 else 0
+            cerca = [(tt, pp) for tt, pp in self.live if abs(mdates.date2num(tt) - mdates.date2num(t)) <= paso_td]
+            if cerca:
+                pr = cerca[-1][1]
+                linea += f"  ·  Real: {pr:.{dec}f} $"
+                caja += f"\nPrecio real (directo): {pr:.{dec}f} $"
         self.h_vline.set_xdata([t, t]); self.h_vline.set_visible(True)
         self.h_box.xy = (mdates.date2num(t), y)
         self.h_box.set_text(caja)
@@ -305,7 +422,7 @@ class App(tk.Tk):
         self.show_image(self.fig_ver, self.cv_ver, IMG_VER, "Pulsa «Verificar a ciegas» para comprobar el modelo\ncontra el precio real que siguió.")
         if not os.path.exists(RES):
             return
-        r = json.load(open(RES, encoding="utf-8"))
+        r = leer_json(RES)
         self.lbl_price.config(text=f"{r['precio']:.4f} $")
         HT = r.get("horizonte_texto", f"{r.get('horizonte_dias', 7)} días")
         dec = 4 if r.get("paso") == "hora" else 3
@@ -349,7 +466,7 @@ class App(tk.Tk):
         for lv, v in sorted(r["prob_niveles"].items(), key=lambda kv: -float(kv[0])):
             self.tv_lv.insert("", "end", values=(lv, f"{v['toca_pct']:.0f} %", f"{v['cierre_final_por_encima_pct']:.0f} %"))
 
-        b = json.load(open(BT, encoding="utf-8")) if os.path.exists(BT) else None
+        b = leer_json(BT) if os.path.exists(BT) else None
         if b and b.get("horizonte_texto", f"{b.get('horizonte_dias')} días") == HT:
             per = [k for k in b if k.startswith("desde")]
             lines = []
@@ -366,16 +483,22 @@ class App(tk.Tk):
             self.lbl_cal.config(text="Sin backtest para este horizonte: marca «Recalcular backtest» y pulsa Actualizar.")
 
     # ------------------------------------------------------------------ actualización
-    def run_update(self):
+    def run_update(self, auto=False):
         if self.running:
+            if not auto:
+                self.pendiente = True              # se recalcula al terminar el cálculo en curso
             return
         self.running = True
+        self.auto = auto
         self.btn.state(["disabled"])
         self.pb.start(12)
         self.log.delete("1.0", "end")
-        self.nb.select(3)
-        self.goto_tab = 0
-        steps = [("Descargando datos…", "fetch_data.py")]
+        if auto:                                   # recálculo del modo en directo: no cambia de pestaña
+            self.goto_tab = self.nb.index(self.nb.select())
+        else:
+            self.nb.select(3)
+            self.goto_tab = 0
+        steps = [("Descargando datos…", "fetch_data.py --rapido" if auto else "fetch_data.py")]
         Hs = self.var_h.get()
         H = 1 if Hs == "24 h" else int(Hs.split()[0])
         horas = Hs == "24 h"
@@ -400,7 +523,7 @@ class App(tk.Tk):
     def _horizonte_guardado(self, path=RES):
         """Horizonte de unos resultados guardados, con el texto del desplegable ("24 h", "7 días"…)."""
         try:
-            d = json.load(open(path, encoding="utf-8"))
+            d = leer_json(path)
             if d.get("horizonte_texto") == "24 horas":
                 return "24 h"
             return f"{int(d.get('horizonte_dias', 7))} días"
@@ -408,7 +531,7 @@ class App(tk.Tk):
             return "24 h" if path == RES else None
 
     def _worker(self, steps, H, verificar=False):
-        env = dict(os.environ, PYTHONIOENCODING="utf-8", MPLBACKEND="Agg", HORIZONTE=str(H))
+        env = dict(os.environ, PYTHONIOENCODING="utf-8", PYTHONUTF8="1", MPLBACKEND="Agg", HORIZONTE=str(H))
         if verificar:
             env.pop("HORIZONTE")                     # la verificación llega hasta el último día conocido
         flags = getattr(subprocess, "CREATE_NO_WINDOW", 0)
@@ -451,16 +574,28 @@ class App(tk.Tk):
                     self.running = False
                     self.btn.state(["!disabled"])
                     self.pb.stop()
+                    self.ultima_act = time.monotonic()
                     ok, fallos = val
+                    if self.pendiente:
+                        self.pendiente = False
+                        self.after(100, self.run_update)
                     if ok:
-                        self.lbl_status.config(text="Actualizado." if not fallos else
-                                               f"Actualizado con datos guardados ({fallos} descargas fallaron).")
+                        hora = datetime.now().strftime("%H:%M")
+                        self.lbl_status.config(text=f"Actualizado a las {hora}." if not fallos else
+                                               f"Actualizado a las {hora} con datos guardados ({fallos} descargas fallaron).")
                         self.var_bt.set(False)
                         self.load_results()
                         self.nb.select(self.goto_tab)
                     else:
                         self.lbl_status.config(text="Error: revisa la pestaña Registro.")
-                        messagebox.showerror("Error", "La actualización falló. Revisa la pestaña «Registro».")
+                        if not self.auto:
+                            messagebox.showerror("Error", "La actualización falló. Revisa la pestaña «Registro».")
+                elif kind == "live":
+                    self.live_fetching = False
+                    self._nuevo_precio(*val)
+                elif kind == "live_err":
+                    self.live_fetching = False
+                    self.lbl_status.config(text=f"Sin precio en directo ({val[:60]}).")
         except queue.Empty:
             pass
         self.after(150, self._poll)

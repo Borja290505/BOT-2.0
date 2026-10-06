@@ -65,5 +65,5 @@ for k, p in pred.items():
               "acierto_±1%_pct": round(float((err <= 1).mean() * 100), 1), "acierto_±3%_pct": round(float((err <= 3).mean() * 100), 1),
               "direccion_acierto_pct": round(float(dirok[p != 0].mean() * 100), 1) if (p != 0).any() else None,
               "error_medio_2024+_pct": round(float(err[x.index[ev] >= "2024-01-01"].mean()), 2)}
-json.dump(out, open(os.path.join(OUT, f"mejora_puntual_{H}d.json"), "w"), indent=1, ensure_ascii=False)
+json.dump(out, open(os.path.join(OUT, f"mejora_puntual_{H}d.json"), "w", encoding="utf-8"), indent=1, ensure_ascii=False)
 print(json.dumps(out, indent=1, ensure_ascii=False))

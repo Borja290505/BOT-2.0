@@ -1,5 +1,5 @@
 """Descarga velas diarias (OHLCV) de exchanges públicos y las guarda en analysis/data/."""
-import json, os, time, urllib.request, csv
+import json, os, sys, time, urllib.request, csv
 
 OUT = os.path.join(os.path.dirname(__file__), "data")
 os.makedirs(OUT, exist_ok=True)
@@ -31,17 +31,31 @@ def kraken(pair, interval=1440):
     return {int(c[0]): [c[1], c[2], c[3], c[4], c[6]] for c in d["result"][key]}
 
 def save(name, rows):
-    with open(os.path.join(OUT, name), "w", newline="") as f:
+    with open(os.path.join(OUT, name), "w", newline="", encoding="utf-8") as f:
         w = csv.writer(f)
         w.writerow(["timestamp", "date", "open", "high", "low", "close", "volume"])
         for ts in sorted(rows):
             w.writerow([ts, time.strftime("%Y-%m-%d", time.gmtime(ts))] + rows[ts])
     print(name, len(rows))
 
+def incremental(name, pair, start=1514764800, step=86400):
+    """Solo descarga lo que falta desde la última vela guardada (mucho más rápido)."""
+    rows = {}
+    p = os.path.join(OUT, name)
+    if os.path.exists(p):
+        with open(p, encoding="utf-8") as f:
+            for r in list(csv.reader(f))[1:]:
+                rows[int(r[0])] = r[2:7]
+        if rows:
+            start = max(start, max(rows) - 3 * step)        # se repiten las últimas velas (la actual cambia)
+    rows.update(bitstamp(pair, start, step))
+    return rows
+
+RAPIDO = "--rapido" in sys.argv                # solo XRP (para el modo en directo)
 jobs = [
-    ("bitstamp_xrpusd_1d.csv", lambda: bitstamp("xrpusd")),
+    ("bitstamp_xrpusd_1d.csv", lambda: incremental("bitstamp_xrpusd_1d.csv", "xrpusd")),
     # velas de 1 hora de los últimos ~3 años (modelo de 24 horas)
-    ("bitstamp_xrpusd_1h.csv", lambda: bitstamp("xrpusd", int(time.time()) - 3 * 365 * 86400, 3600)),
+    ("bitstamp_xrpusd_1h.csv", lambda: incremental("bitstamp_xrpusd_1h.csv", "xrpusd", int(time.time()) - 3 * 365 * 86400, 3600)),
     ("bitstamp_btcusd_1d.csv", lambda: bitstamp("btcusd")),
     ("bitstamp_ethusd_1d.csv", lambda: bitstamp("ethusd")),
     ("bitstamp_solusd_1d.csv", lambda: bitstamp("solusd", 1609459200)),
@@ -54,6 +68,8 @@ jobs = [
     ("kraken_adausd_1d.csv", lambda: kraken("ADAUSD")),
     ("kraken_hbarusd_1d.csv", lambda: kraken("HBARUSD")),
 ]
+if RAPIDO:
+    jobs = jobs[:2]
 ok_xrp = False
 for name, fn in jobs:
     try:
@@ -64,7 +80,10 @@ for name, fn in jobs:
 
 if ok_xrp:                                   # hora del precio actual (solo si XRP se descargó bien)
     json.dump({"descargado_utc": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())},
-              open(os.path.join(OUT, "meta.json"), "w"))
+              open(os.path.join(OUT, "meta.json"), "w", encoding="utf-8"))
+
+if RAPIDO:
+    sys.exit(0)
 
 # Instantánea de mercado (CoinGecko) para contraste
 try:
@@ -72,7 +91,7 @@ try:
     snap = get("https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&ids=" + ids +
                "&price_change_percentage=7d,30d,1y")
     snap = {"fetched_utc": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()), "data": snap}
-    json.dump(snap, open(os.path.join(OUT, "coingecko_markets.json"), "w"), indent=1)
+    json.dump(snap, open(os.path.join(OUT, "coingecko_markets.json"), "w", encoding="utf-8"), indent=1)
     print("coingecko ok")
 except Exception as e:
     print("FAIL coingecko", e)
@@ -85,7 +104,7 @@ for name, url in [
     ("kraken_xrp_book.json", "https://api.kraken.com/0/public/Depth?pair=XRPUSD&count=500"),
 ]:
     try:
-        json.dump(get(url), open(os.path.join(OUT, name), "w"))
+        json.dump(get(url), open(os.path.join(OUT, name), "w", encoding="utf-8"))
         print("ok", name)
     except Exception as e:
         print("FAIL", name, e)

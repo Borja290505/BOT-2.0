@@ -1,183 +1,187 @@
 {
- "desde el último año": {
+ "desde 2020-06": {
   "v1": {
    "bandas_pct": {
-    "<P5": 4.0,
-    "P5-25": 24.7,
-    "P25-50": 25.4,
-    "P50-75": 23.0,
-    "P75-95": 19.0,
-    ">P95": 3.8
+    "<P5": 4.5,
+    "P5-25": 18.8,
+    "P25-50": 27.9,
+    "P50-75": 25.4,
+    "P75-95": 15.9,
+    ">P95": 7.4
    },
-   "cobertura_90": 92.1,
-   "cobertura_50": 48.4,
-   "error_calibracion": 10.2,
-   "pinball": 8.086,
-   "cobertura_90_por_hora": [
-    90.0,
-    91.8,
-    91.8,
-    91.1,
-    91.1,
-    90.4,
-    90.7,
-    91.4,
-    91.4,
-    90.6,
-    90.0,
-    90.0,
-    90.3,
-    90.6,
-    90.6,
-    90.9,
-    91.3,
-    91.0,
-    90.9,
-    91.6,
-    92.3,
-    91.7,
-    91.9,
-    92.1
-   ]
+   "cobertura_90": 88.1,
+   "cobertura_50": 53.4,
+   "error_calibracion": 11.6,
+   "pinball": 30.861,
+   "interval_score_90": 0.691,
+   "ancho_90_relativo": 0.377
   },
   "v2_todo": {
    "bandas_pct": {
-    "<P5": 4.0,
-    "P5-25": 24.9,
-    "P25-50": 25.4,
-    "P50-75": 23.0,
-    "P75-95": 18.5,
-    ">P95": 4.3
-   },
-   "cobertura_90": 91.8,
-   "cobertura_50": 48.4,
-   "error_calibracion": 10.6,
-   "pinball": 8.084,
-   "cobertura_90_por_hora": [
-    89.4,
-    90.5,
-    90.5,
-    90.9,
-    90.7,
-    90.7,
-    90.3,
-    90.9,
-    90.9,
-    89.5,
-    89.2,
-    89.2,
-    89.6,
-    89.6,
-    90.5,
-    90.3,
-    90.9,
-    90.3,
-    90.6,
-    91.1,
-    91.9,
-    91.4,
-    91.4,
-    91.8
-   ]
-  }
- },
- "desde últimos 90 días": {
-  "v1": {
-   "bandas_pct": {
-    "<P5": 2.2,
+    "<P5": 4.8,
     "P5-25": 20.7,
+    "P25-50": 27.2,
+    "P50-75": 23.8,
+    "P75-95": 17.2,
+    ">P95": 6.3
+   },
+   "cobertura_90": 88.8,
+   "cobertura_50": 51.0,
+   "error_calibracion": 8.3,
+   "pinball": 30.827,
+   "interval_score_90": 0.6839,
+   "ancho_90_relativo": 0.403
+  },
+  "v2_3a": {
+   "bandas_pct": {
+    "<P5": 5.1,
+    "P5-25": 21.0,
     "P25-50": 26.3,
-    "P50-75": 26.1,
-    "P75-95": 18.5,
+    "P50-75": 23.5,
+    "P75-95": 17.8,
     ">P95": 6.2
    },
-   "cobertura_90": 91.6,
-   "cobertura_50": 52.4,
-   "error_calibracion": 8.5,
-   "pinball": 8.031,
-   "cobertura_90_por_hora": [
-    92.4,
-    94.4,
-    93.0,
-    92.7,
-    93.6,
-    91.6,
-    92.4,
-    92.7,
-    92.7,
-    92.2,
-    90.2,
-    91.0,
-    90.5,
-    92.2,
-    91.3,
-    91.9,
-    91.3,
-    91.6,
-    91.3,
-    91.6,
-    91.6,
-    90.8,
-    91.6,
-    91.6
-   ]
+   "cobertura_90": 88.7,
+   "cobertura_50": 49.8,
+   "error_calibracion": 7.3,
+   "pinball": 30.907,
+   "interval_score_90": 0.6885,
+   "ancho_90_relativo": 0.401
+  },
+  "v2_todo_sin_deriva": {
+   "bandas_pct": {
+    "<P5": 4.5,
+    "P5-25": 19.2,
+    "P25-50": 26.0,
+    "P50-75": 25.3,
+    "P75-95": 18.4,
+    ">P95": 6.5
+   },
+   "cobertura_90": 89.0,
+   "cobertura_50": 51.4,
+   "error_calibracion": 5.7,
+   "pinball": 30.665,
+   "interval_score_90": 0.6809,
+   "ancho_90_relativo": 0.4
+  },
+  "v2_3a_sin_deriva": {
+   "bandas_pct": {
+    "<P5": 4.6,
+    "P5-25": 18.9,
+    "P25-50": 25.5,
+    "P50-75": 25.2,
+    "P75-95": 19.1,
+    ">P95": 6.7
+   },
+   "cobertura_90": 88.8,
+   "cobertura_50": 50.7,
+   "error_calibracion": 4.7,
+   "pinball": 30.693,
+   "interval_score_90": 0.6853,
+   "ancho_90_relativo": 0.397
+  }
+ },
+ "desde 2024-01": {
+  "v1": {
+   "bandas_pct": {
+    "<P5": 5.0,
+    "P5-25": 19.6,
+    "P25-50": 29.1,
+    "P50-75": 23.4,
+    "P75-95": 15.8,
+    ">P95": 7.2
+   },
+   "cobertura_90": 87.8,
+   "cobertura_50": 52.5,
+   "error_calibracion": 12.7,
+   "pinball": 25.818,
+   "interval_score_90": 0.5693,
+   "ancho_90_relativo": 0.309
   },
   "v2_todo": {
    "bandas_pct": {
-    "<P5": 2.2,
-    "P5-25": 21.3,
-    "P25-50": 25.5,
-    "P50-75": 26.9,
-    "P75-95": 17.4,
-    ">P95": 6.7
+    "<P5": 4.6,
+    "P5-25": 23.0,
+    "P25-50": 26.7,
+    "P50-75": 22.0,
+    "P75-95": 18.2,
+    ">P95": 5.6
    },
-   "cobertura_90": 91.0,
-   "cobertura_50": 52.4,
-   "error_calibracion": 10.8,
-   "pinball": 8.025,
-   "cobertura_90_por_hora": [
-    91.3,
-    92.7,
-    92.4,
-    91.6,
-    93.3,
-    91.3,
-    92.2,
-    92.2,
-    92.4,
-    90.8,
-    89.9,
-    90.2,
-    89.4,
-    90.8,
-    91.9,
-    91.3,
-    91.0,
-    90.2,
-    91.0,
-    91.3,
-    91.6,
-    90.2,
-    91.9,
-    91.0
-   ]
+   "cobertura_90": 89.8,
+   "cobertura_50": 48.7,
+   "error_calibracion": 10.6,
+   "pinball": 25.638,
+   "interval_score_90": 0.5501,
+   "ancho_90_relativo": 0.346
+  },
+  "v2_3a": {
+   "bandas_pct": {
+    "<P5": 5.2,
+    "P5-25": 23.0,
+    "P25-50": 25.3,
+    "P50-75": 21.4,
+    "P75-95": 19.2,
+    ">P95": 6.0
+   },
+   "cobertura_90": 88.8,
+   "cobertura_50": 46.7,
+   "error_calibracion": 9.0,
+   "pinball": 25.837,
+   "interval_score_90": 0.5613,
+   "ancho_90_relativo": 0.331
+  },
+  "v2_todo_sin_deriva": {
+   "bandas_pct": {
+    "<P5": 4.4,
+    "P5-25": 20.8,
+    "P25-50": 25.7,
+    "P50-75": 23.4,
+    "P75-95": 19.8,
+    ">P95": 6.0
+   },
+   "cobertura_90": 89.6,
+   "cobertura_50": 49.1,
+   "error_calibracion": 5.0,
+   "pinball": 25.601,
+   "interval_score_90": 0.5519,
+   "ancho_90_relativo": 0.344
+  },
+  "v2_3a_sin_deriva": {
+   "bandas_pct": {
+    "<P5": 4.6,
+    "P5-25": 20.6,
+    "P25-50": 25.3,
+    "P50-75": 21.8,
+    "P75-95": 21.4,
+    ">P95": 6.4
+   },
+   "cobertura_90": 89.0,
+   "cobertura_50": 47.1,
+   "error_calibracion": 7.3,
+   "pinball": 25.657,
+   "interval_score_90": 0.5612,
+   "ancho_90_relativo": 0.329
   }
  },
  "direccion": {
+  "n": 2311,
   "logistica_acierto_pct": 50.6,
-  "nota": "acierto de la mediana del cono en la dirección a 24 h"
+  "logistica_brier": 0.2545,
+  "climatologia_brier": 0.2499,
+  "moneda_brier": 0.25,
+  "siempre_sube_acierto_pct": 46.8,
+  "logistica_acierto_confianza_alta_pct": 51.7,
+  "n_confianza_alta": 383,
+  "por_anio": {
+   "2020": 49.1,
+   "2021": 42.5,
+   "2022": 52.6,
+   "2023": 50.7,
+   "2024": 53.8,
+   "2025": 51.8,
+   "2026": 53.9
+  }
  },
- "precio_exacto": {
-  "error_medio_mediana_pct": 2.47,
-  "error_medio_sin_cambio_pct": 2.47,
-  "acierto_±1%_pct": 32.2
- },
- "nombres": {
-  "v1": "sin ajuste horario",
-  "v2_todo": "con ajuste horario"
- },
- "horizonte_dias": 1,
- "horizonte_texto": "24 horas",
- "n_ventanas": 1457,
- "hasta": "2026-10-05 14:00:00"
+ "horizonte_dias": 7,
+ "hasta": "2026-09-28"
 }

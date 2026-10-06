@@ -100,7 +100,7 @@ def backtest():
            "hasta": str(rows[-1]["fecha"])}
     # Las claves "desde…" mantienen el formato de backtest_v1_vs_v2.json para la app y la web
     out = {("desde " + k.split("desde ")[1] if k.startswith("desde") else k): v for k, v in out.items()}
-    json.dump(out, open(os.path.join(OUT, "backtest_v1_vs_v2.json"), "w"), indent=1, ensure_ascii=False)
+    json.dump(out, open(os.path.join(OUT, "backtest_v1_vs_v2.json"), "w", encoding="utf-8"), indent=1, ensure_ascii=False)
 
     fig, (a1, a2) = plt.subplots(1, 2, figsize=(12, 4.2), dpi=150, gridspec_kw={"width_ratios": [1.1, 1]})
     per = "desde el último año"
@@ -153,7 +153,7 @@ def verificar():
     res = {"fecha_corte": str(corte), "precio_corte": P0, "horizonte_texto": "24 horas",
            "horas_dentro_50_pct": float(df.dentro_50.mean() * 100), "horas_dentro_90_pct": float(df.dentro_90.mean() * 100),
            "error_final_mediana_pct": float((q[50][-1] / real.iloc[-1] - 1) * 100), "final": filas[-1], "horas": filas}
-    json.dump(res, open(os.path.join(OUT, "verificacion.json"), "w"), indent=1, ensure_ascii=False)
+    json.dump(res, open(os.path.join(OUT, "verificacion.json"), "w", encoding="utf-8"), indent=1, ensure_ascii=False)
 
     hx = full.close.iloc[max(0, i0 - 72): i0 + 1]
     fut = [corte] + list(real.index)
@@ -190,7 +190,7 @@ def escenarios():
     t = len(lc) - 1
     P0 = float(xa.close.iloc[-1])
     meta_p = os.path.join(m.D, "meta.json")
-    ahora = pd.Timestamp(json.load(open(meta_p))["descargado_utc"]) if os.path.exists(meta_p) else xa.index[-1]
+    ahora = pd.Timestamp(json.load(open(meta_p, encoding="utf-8"))["descargado_utc"]) if os.path.exists(meta_p) else xa.index[-1]
     ahora = ahora.tz_localize(None) if ahora.tzinfo else ahora
     horas = x.index.hour.values.copy()
     horas[t] = ahora.hour                           # analogía con la hora actual
@@ -260,7 +260,7 @@ def escenarios():
                                          "toca_pct": float(((paths.max(1) >= L) if L > P0 else (paths.min(1) <= L)).mean() * 100)}
                             for L in levels},
            "imagen": "xrp_escenarios_v2.png"}
-    json.dump(res, open(os.path.join(OUT, "resultados_v2.json"), "w"), indent=1, ensure_ascii=False)
+    json.dump(res, open(os.path.join(OUT, "resultados_v2.json"), "w", encoding="utf-8"), indent=1, ensure_ascii=False)
 
     # gráfico
     hx = xa.close[-96:]
@@ -304,7 +304,7 @@ def escenarios():
     bt_p = os.path.join(OUT, "backtest_v1_vs_v2.json")
     cal = ""
     if os.path.exists(bt_p):
-        bt = json.load(open(bt_p))
+        bt = json.load(open(bt_p, encoding="utf-8"))
         if bt.get("horizonte_texto") == "24 horas":
             a = bt["desde el último año"]["v2_todo"]
             cal = (f"Backtest walk-forward del último año: dentro de P5–P95 {a['cobertura_90']:.0f} % (ideal 90 %), "

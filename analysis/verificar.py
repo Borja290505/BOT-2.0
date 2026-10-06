@@ -58,7 +58,7 @@ res = {"fecha_corte": str(corte.date()), "precio_corte": P0, "horizonte_dias": H
        "error_medio_mediana_pct": float(df.error_mediana_pct.abs().mean()),
        "error_medio_sin_cambio_pct": float(((P0 / real - 1).abs() * 100).mean()),
        "final": filas[-1], "dias": filas}
-json.dump(res, open(os.path.join(OUT, "verificacion.json"), "w"), indent=1, ensure_ascii=False)
+json.dump(res, open(os.path.join(OUT, "verificacion.json"), "w", encoding="utf-8"), indent=1, ensure_ascii=False)
 
 # --- gráfico
 hx = full.close.iloc[max(0, i0 - 60): i0 + 1]
