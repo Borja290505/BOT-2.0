@@ -5,14 +5,14 @@ on:
       horizonte:
         description: "Horizonte en días"
         type: choice
-        options: ["7", "14", "30"]
-        default: "7"
+        options: ["24h", "7", "14", "30"]
+        default: "24h"
   schedule:
     - cron: "17 6 * * *"        # cada día a las 06:17 UTC (solo funciona desde main)
 permissions:
   contents: write
 env:
-  HORIZONTE: ${{ inputs.horizonte || '7' }}
+  HORIZONTE: ${{ inputs.horizonte || '24h' }}
 jobs:
   analisis:
     runs-on: ubuntu-latest
@@ -25,25 +25,29 @@ jobs:
       - run: pip install -r analysis/requirements.txt
       - name: Descargar datos
         run: python analysis/fetch_data.py
-      - name: Backtest v1 vs v2
-        run: python analysis/backtest_v1_vs_v2.py
-      - name: Cono y escenarios (v2)
-        run: python analysis/xrp_scenarios_v2.py
+      - name: Backtest
+        run: |
+          if [ "$HORIZONTE" = "24h" ]; then python analysis/xrp_24h.py --backtest
+          else python analysis/backtest_v1_vs_v2.py; fi
+      - name: Cono y escenarios
+        run: |
+          if [ "$HORIZONTE" = "24h" ]; then python analysis/xrp_24h.py
+          else python analysis/xrp_scenarios_v2.py; fi
       - name: Resumen en la página del run
         run: |
           python - >> "$GITHUB_STEP_SUMMARY" <<'PY'
           import json
           r = json.load(open("analysis/output/resultados_v2.json"))
-          H = r["horizonte_dias"]
-          print(f"## XRP — escenarios a {H} días (precio {r['precio']:.4f} $ a las {r['precio_hora_utc']} UTC)\n")
-          fin = r["cono_por_dia"][str(H)]
-          print(f"| Percentil día {H} | Precio |\n|---|---|")
-          for k, v in fin.items():
-              print(f"| {k} | {v:.3f} $ |")
+          HT = r.get("horizonte_texto", f"{r['horizonte_dias']} días")
+          dec = 4 if r.get("paso") == "hora" else 3
+          print(f"## XRP — escenarios a {HT} (precio {r['precio']:.4f} $ a las {r['precio_hora_utc']} UTC)\n")
+          print(f"| Percentil al final ({r['cono']['etiquetas'][-1]}) | Precio |\n|---|---|")
+          for k in ("P5", "P25", "P50", "P75", "P95"):
+              print(f"| {k} | {r['cono'][k][-1]:.{dec}f} $ |")
           print("\n| Escenario | Probabilidad | Rango |\n|---|---|---|")
           for k, v in r["escenarios"].items():
               lo, hi = v["rango"]
-              rng = f"< {hi:.3f}" if lo is None else (f"> {lo:.3f}" if hi is None else f"{lo:.3f}–{hi:.3f}")
+              rng = f"< {hi:.{dec}f}" if lo is None else (f"> {lo:.{dec}f}" if hi is None else f"{lo:.{dec}f}–{hi:.{dec}f}")
               print(f"| {k} | {v['prob_pct']:.0f} % | {rng} $ |")
           print("\n*Estimación probabilística, no una predicción.* El gráfico está en el artefacto **graficos-xrp** de este run.")
           PY

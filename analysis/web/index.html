@@ -114,29 +114,29 @@ document.querySelectorAll(".tabs button").forEach(b => b.addEventListener("click
 
 fetch("resultados_v2.json", { cache: "no-store" }).then(r => r.json()).then(r => {
   el("price").textContent = fmt(r.precio, 4) + " $";
-  const H = r.horizonte_dias;
-  el("meta").textContent = `precio a las ${r.precio_hora_utc} UTC (Bitstamp) · horizonte ${H} días, hasta el ${r.hasta} · volatilidad diaria prevista ${fmt(r.sigma_diaria_prevista_pct)} %`;
-  el("h-esc").textContent = `Escenarios a ${H} días (probabilidad del modelo)`;
-  el("h-lv").textContent = `Probabilidad por nivel (${H} días)`;
-  document.title = `XRP Escenarios ${H} días`;
+  const H = r.horizonte_dias, HT = r.horizonte_texto || `${H} días`, dec = r.paso === "hora" ? 4 : 3;
+  el("meta").textContent = `precio a las ${r.precio_hora_utc} UTC (Bitstamp) · horizonte ${HT}, hasta el ${r.hasta} · volatilidad diaria prevista ${fmt(r.sigma_diaria_prevista_pct)} %`;
+  el("h-esc").textContent = `Escenarios a ${HT} (probabilidad del modelo)`;
+  el("h-lv").textContent = `Probabilidad por nivel (${HT})`;
+  document.title = `XRP Escenarios ${HT}`;
 
   el("scenarios").innerHTML = Object.entries(r.escenarios).map(([name, s]) => {
     const [lo, hi] = s.rango;
-    const rng = lo == null ? `por debajo de ${fmt(hi, 3)} $` : hi == null ? `por encima de ${fmt(lo, 3)} $` : `${fmt(lo, 3)} – ${fmt(hi, 3)} $`;
+    const rng = lo == null ? `por debajo de ${fmt(hi, dec)} $` : hi == null ? `por encima de ${fmt(lo, dec)} $` : `${fmt(lo, dec)} – ${fmt(hi, dec)} $`;
     return `<div class="sc"><b>${name}</b><div class="bar"><i style="width:${s.prob_pct}%;background:${COL[name] || "var(--base)"}"></i></div>
             <span class="pct">${fmt(s.prob_pct, 0)} %</span></div><div class="rng">${rng}</div>`;
   }).join("");
   const sims = r.simulaciones || {};
   if (Object.keys(sims).length)
-    el("sims").textContent = `Ejemplos típicos el día ${H}: ` + Object.entries(sims).map(([k, v]) => `${k} ${fmt(v.final, 3)} $`).join(" · ");
+    el("sims").textContent = `Ejemplos típicos al final (${HT}): ` + Object.entries(sims).map(([k, v]) => `${k} ${fmt(v.final, dec)} $`).join(" · ");
 
-  const dias = Object.keys(r.cono_por_dia).sort((a, b) => a - b);
-  el("cone-head").innerHTML = "<th>Percentil</th>" + dias.map(d => `<th>Día ${d}</th>`).join("");
-  el("cone").innerHTML = Object.keys(r.cono_por_dia[dias[0]]).map(k =>
-    `<tr${k === "P50" ? ' class="now"' : ""}><td>${k}</td>` + dias.map(d => `<td>${fmt(r.cono_por_dia[d][k], 3)} $</td>`).join("") + "</tr>").join("");
+  const cono = r.cono;
+  el("cone-head").innerHTML = "<th>Percentil</th>" + cono.etiquetas.map(d => `<th>${d}</th>`).join("");
+  el("cone").innerHTML = ["P5", "P25", "P50", "P75", "P95"].map(k =>
+    `<tr${k === "P50" ? ' class="now"' : ""}><td>${k}</td>` + cono[k].map(v => `<td>${fmt(v, dec)} $</td>`).join("") + "</tr>").join("");
 
   el("levels").innerHTML = Object.entries(r.prob_niveles).sort((a, b) => b[0] - a[0]).map(([lv, v]) =>
-    `<tr><td>${fmt(+lv, 3)} $</td><td>${fmt(v.toca_pct, 0)} %</td><td>${fmt(v.cierre_final_por_encima_pct, 0)} %</td></tr>`).join("");
+    `<tr><td>${fmt(+lv, dec)} $</td><td>${fmt(v.toca_pct, 0)} %</td><td>${fmt(v.cierre_final_por_encima_pct, 0)} %</td></tr>`).join("");
 }).catch(() => { el("meta").innerHTML = '<span class="err">No se pudieron cargar los resultados.</span>'; });
 
 fetch("backtest_v1_vs_v2.json", { cache: "no-store" }).then(r => r.json()).then(b => {
@@ -146,7 +146,7 @@ fetch("backtest_v1_vs_v2.json", { cache: "no-store" }).then(r => r.json()).then(
             (v1: ${fmt(v1.cobertura_90, 0)} %) y por encima del P95 el ${fmt(v2.bandas_pct[">P95"], 0)} % (ideal 5 %).</p>`;
   });
   const d = b.direccion;
-  if (d) rows.push(`<p style="margin:0">Dirección a ${b.horizonte_dias} días: el mejor modelo probado acierta un ${fmt(d.logistica_acierto_pct, 0)} %,
+  if (d) rows.push(`<p style="margin:0">Dirección a ${b.horizonte_texto || b.horizonte_dias + " días"}: el mejor modelo probado acierta un ${fmt(d.logistica_acierto_pct, 0)} %,
                     sin ventaja real sobre una referencia simple.</p>`);
   el("calib").innerHTML = rows.join("");
 }).catch(() => { el("calib").textContent = "Sin datos de backtest."; });

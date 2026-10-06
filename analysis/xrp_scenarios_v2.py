@@ -117,6 +117,8 @@ res = {"modelo": "v2: HAR Garman-Klass + cuantiles conformales + trayectorias an
        "ultima_vela_cerrada": str(c.index[-1].date()), "ultimo_cierre": float(c.iloc[-1]),
        "sigma_diaria_prevista_pct": float(sig[t] * 100), "n_trayectorias_analogas": int(len(zz)),
        "cono_por_dia": {str(d): {f"P{p}": float(q[p][d - 1]) for p in PCT} for d in dias_tabla},
+       "horizonte_texto": f"{H} días",
+       "cono": {"etiquetas": [f"Día {d}" for d in dias_tabla], **{f"P{p}": [float(q[p][d - 1]) for d in dias_tabla] for p in PCT}},
        "niveles": {"soportes": SUP, "resistencias": RES, "sma50": sma50, "sma200": sma200},
        "escenarios": {k_: {"prob_pct": round(v["p"], 1), "rango": [v["lo"], v["hi"]], "rango_80_dentro": v["rango_80"],
                            "invalidacion": v["inv"]} for k_, v in SC.items()},
