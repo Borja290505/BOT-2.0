@@ -78,6 +78,8 @@ class App(tk.Tk):
         self.load_results()
         self.after(150, self._poll)
         self.after(1500, self._tick_live)
+        if self._resultados_viejos():              # al abrir, si lo guardado no está al día, se recalcula
+            self.after(500, lambda: self.run_update(auto=True, rapido=False))
 
     def report_callback_exception(self, exc, val, tb):
         """Cualquier error de la interfaz se muestra (con pythonw no hay consola donde verlo)."""
@@ -483,7 +485,18 @@ class App(tk.Tk):
             self.lbl_cal.config(text="Sin backtest para este horizonte: marca «Recalcular backtest» y pulsa Actualizar.")
 
     # ------------------------------------------------------------------ actualización
-    def run_update(self, auto=False):
+    def _resultados_viejos(self):
+        """True si no hay resultados o se calcularon hace más de lo que espera el modo en directo (15/60 min)."""
+        try:
+            t = datetime.strptime(leer_json(RES)["precio_hora_utc"], "%Y-%m-%d %H:%M")
+        except Exception:
+            return True
+        minutos = MIN_RECALCULO.get(self.var_h.get(), 60)
+        return (datetime.now(timezone.utc).replace(tzinfo=None) - t).total_seconds() > minutos * 60
+
+    def run_update(self, auto=False, rapido=None):
+        """auto: lanzado por la app (sin cambiar de pestaña ni ventanas de error); rapido: descarga solo XRP."""
+        rapido = auto if rapido is None else rapido
         if self.running:
             if not auto:
                 self.pendiente = True              # se recalcula al terminar el cálculo en curso
@@ -498,7 +511,7 @@ class App(tk.Tk):
         else:
             self.nb.select(3)
             self.goto_tab = 0
-        steps = [("Descargando datos…", "fetch_data.py --rapido" if auto else "fetch_data.py")]
+        steps = [("Descargando datos…", "fetch_data.py --rapido" if rapido else "fetch_data.py")]
         Hs = self.var_h.get()
         H = 1 if Hs == "24 h" else int(Hs.split()[0])
         horas = Hs == "24 h"
