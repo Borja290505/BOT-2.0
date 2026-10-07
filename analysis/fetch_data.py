@@ -1,5 +1,6 @@
 """Descarga velas diarias (OHLCV) de exchanges públicos y las guarda en analysis/data/."""
 import json, os, sys, time, urllib.request, csv
+from concurrent.futures import ThreadPoolExecutor
 
 OUT = os.path.join(os.path.dirname(__file__), "data")
 os.makedirs(OUT, exist_ok=True)
@@ -56,11 +57,11 @@ jobs = [
     ("bitstamp_xrpusd_1d.csv", lambda: incremental("bitstamp_xrpusd_1d.csv", "xrpusd")),
     # velas de 1 hora de los últimos ~3 años (modelo de 24 horas)
     ("bitstamp_xrpusd_1h.csv", lambda: incremental("bitstamp_xrpusd_1h.csv", "xrpusd", int(time.time()) - 3 * 365 * 86400, 3600)),
-    ("bitstamp_btcusd_1d.csv", lambda: bitstamp("btcusd")),
-    ("bitstamp_ethusd_1d.csv", lambda: bitstamp("ethusd")),
-    ("bitstamp_solusd_1d.csv", lambda: bitstamp("solusd", 1609459200)),
-    ("bitstamp_xlmusd_1d.csv", lambda: bitstamp("xlmusd")),
-    ("bitstamp_adausd_1d.csv", lambda: bitstamp("adausd", 1609459200)),
+    ("bitstamp_btcusd_1d.csv", lambda: incremental("bitstamp_btcusd_1d.csv", "btcusd")),
+    ("bitstamp_ethusd_1d.csv", lambda: incremental("bitstamp_ethusd_1d.csv", "ethusd")),
+    ("bitstamp_solusd_1d.csv", lambda: incremental("bitstamp_solusd_1d.csv", "solusd", 1609459200)),
+    ("bitstamp_xlmusd_1d.csv", lambda: incremental("bitstamp_xlmusd_1d.csv", "xlmusd")),
+    ("bitstamp_adausd_1d.csv", lambda: incremental("bitstamp_adausd_1d.csv", "adausd", 1609459200)),
     ("kraken_xrpusd_1d.csv", lambda: kraken("XRPUSD")),
     ("kraken_xrpusd_4h.csv", lambda: kraken("XRPUSD", 240)),
     ("kraken_solusd_1d.csv", lambda: kraken("SOLUSD")),
@@ -70,13 +71,16 @@ jobs = [
 ]
 if RAPIDO:
     jobs = jobs[:2]
-ok_xrp = False
-for name, fn in jobs:
+def job(name, fn):
     try:
         save(name, fn())
-        ok_xrp = ok_xrp or name == "bitstamp_xrpusd_1d.csv"
+        return name == "bitstamp_xrpusd_1d.csv"
     except Exception as e:
         print("FAIL", name, e)
+        return False
+
+with ThreadPoolExecutor(max_workers=6) as pool:   # descargas en paralelo
+    ok_xrp = any(list(pool.map(lambda j: job(*j), jobs)))
 
 if ok_xrp:                                   # hora del precio actual (solo si XRP se descargó bien)
     json.dump({"descargado_utc": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())},
