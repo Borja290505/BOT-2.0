@@ -2,7 +2,7 @@
 Aplicación de escritorio para el análisis de escenarios de XRP.
 Ábrela con doble clic en "Abrir_XRP.bat" (Windows) o con:  python analysis/app_xrp.py
 """
-import json, os, subprocess, sys, threading, queue, time, traceback, urllib.request
+import json, os, shutil, subprocess, sys, threading, queue, time, traceback, urllib.request
 from datetime import datetime, timezone
 import tkinter as tk
 from tkinter import ttk, messagebox
@@ -24,7 +24,8 @@ DATOS_GRAF = os.path.join(OUT, "grafico_datos.json")
 DIAS = ["lun", "mar", "mié", "jue", "vie", "sáb", "dom"]
 TICKER = "https://www.bitstamp.net/api/v2/ticker/xrpusd/"
 SEG_DIRECTO = 10                                  # cada cuánto se consulta el precio en directo
-MIN_RECALCULO = {"24 h": 15}                      # minutos entre recálculos automáticos (60 en los demás modos)
+MIN_RECALCULO = {"24 h": 5}                       # minutos entre recálculos automáticos (30 en los demás modos)
+MIN_RECALCULO_OTROS = 30
 
 
 def leer_json(path):
@@ -37,6 +38,12 @@ def leer_json(path):
             return json.load(f)
 IMG_CAL = os.path.join(OUT, "xrp_calibracion_v1_vs_v2.png")
 IMG_VER = os.path.join(OUT, "verificacion.png")
+BT_DIAS_VALIDO = 7                                # el backtest de cada horizonte se guarda y se reutiliza una semana
+
+
+def bt_cache(Hs):
+    """Copia guardada del backtest de un horizonte («24 h» → backtest_24h.json), para no repetirlo al cambiar de modo."""
+    return os.path.join(OUT, "backtest_" + Hs.replace(" días", "d").replace(" ", "") + ".json")
 
 BG, CARD, INK, MUTED, LINE = "#fcfcfb", "#ffffff", "#0b0b0b", "#52514e", "#e6e5e0"
 COL = {"Bajista": "#e34948", "Base": "#2a78d6", "Alcista": "#1baf7a"}
@@ -72,6 +79,7 @@ class App(tk.Tk):
         self.live_fetching = False
         self.hovering = False
         self.ultima_act = time.monotonic()
+        self.txt_estado = ""                       # «Actualizado a las…», para la barra de estado
         self.goto_tab = 0
         self._style()
         self._build()
@@ -283,14 +291,17 @@ class App(tk.Tk):
 
     # ------------------------------------------------------------------ precio en directo
     def _tick_live(self):
-        """Cada pocos segundos pide el último precio; cada 15/60 min recalcula el análisis."""
+        """Cada pocos segundos pide el último precio; cada 5/30 min recalcula el análisis."""
         if self.var_live.get():
             if not self.live_fetching:
                 self.live_fetching = True
                 threading.Thread(target=self._fetch_live, daemon=True).start()
-            minutos = MIN_RECALCULO.get(self.var_h.get(), 60)
-            if not self.running and time.monotonic() - self.ultima_act > minutos * 60:
+            minutos = MIN_RECALCULO.get(self.var_h.get(), MIN_RECALCULO_OTROS)
+            falta = minutos * 60 - (time.monotonic() - self.ultima_act)
+            if not self.running and falta <= 0:
                 self.run_update(auto=True)
+            elif not self.running and self.txt_estado:
+                self.lbl_status.config(text=f"{self.txt_estado}  En directo: próximo recálculo en {max(1, round(falta / 60))} min.")
         self.after(SEG_DIRECTO * 1000, self._tick_live)
 
     def _obtener_precio(self):
@@ -486,12 +497,12 @@ class App(tk.Tk):
 
     # ------------------------------------------------------------------ actualización
     def _resultados_viejos(self):
-        """True si no hay resultados o se calcularon hace más de lo que espera el modo en directo (15/60 min)."""
+        """True si no hay resultados o se calcularon hace más de lo que espera el modo en directo (5/30 min)."""
         try:
             t = datetime.strptime(leer_json(RES)["precio_hora_utc"], "%Y-%m-%d %H:%M")
         except Exception:
             return True
-        minutos = MIN_RECALCULO.get(self.var_h.get(), 60)
+        minutos = MIN_RECALCULO.get(self.var_h.get(), MIN_RECALCULO_OTROS)
         return (datetime.now(timezone.utc).replace(tzinfo=None) - t).total_seconds() > minutos * 60
 
     def run_update(self, auto=False, rapido=None):
@@ -515,6 +526,10 @@ class App(tk.Tk):
         Hs = self.var_h.get()
         H = 1 if Hs == "24 h" else int(Hs.split()[0])
         horas = Hs == "24 h"
+        cache = bt_cache(Hs)
+        if self._horizonte_guardado(BT) != Hs and not self.var_bt.get() and os.path.exists(cache) \
+                and time.time() - os.path.getmtime(cache) < BT_DIAS_VALIDO * 86400:
+            shutil.copyfile(cache, BT)             # backtest de este horizonte ya hecho: se reutiliza
         if self.var_bt.get() or self._horizonte_guardado(BT) != Hs:
             steps.append(("Recalculando backtest…", "xrp_24h.py --backtest" if horas else "backtest_v1_vs_v2.py"))
         steps.append(("Calculando escenarios…", "xrp_24h.py" if horas else "xrp_scenarios_v2.py"))
@@ -570,6 +585,9 @@ class App(tk.Tk):
                 ok = False
                 self.q.put(("log", f"\n✗ No se pudo ejecutar {script}: {e}\n"))
                 break
+        Hb = self._horizonte_guardado(BT)
+        if ok and Hb and any("backtest" in s for _, s in steps):
+            shutil.copyfile(BT, bt_cache(Hb))      # se guarda el backtest de este horizonte para reutilizarlo
         if ok and fallos:
             self.q.put(("log", f"\n⚠ {fallos} descargas fallaron (¿sin conexión?). Se han usado los últimos datos guardados.\n"))
         self.q.put(("done", (ok, fallos)))
@@ -594,8 +612,9 @@ class App(tk.Tk):
                         self.after(100, self.run_update)
                     if ok:
                         hora = datetime.now().strftime("%H:%M")
-                        self.lbl_status.config(text=f"Actualizado a las {hora}." if not fallos else
-                                               f"Actualizado a las {hora} con datos guardados ({fallos} descargas fallaron).")
+                        self.txt_estado = (f"Actualizado a las {hora}." if not fallos else
+                                           f"Actualizado a las {hora} con datos guardados ({fallos} descargas fallaron).")
+                        self.lbl_status.config(text=self.txt_estado)
                         self.var_bt.set(False)
                         self.load_results()
                         self.nb.select(self.goto_tab)
