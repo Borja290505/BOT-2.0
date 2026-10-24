@@ -3,16 +3,16 @@
   "v1": {
    "bandas_pct": {
     "<P5": 4.0,
-    "P5-25": 24.6,
-    "P25-50": 25.3,
+    "P5-25": 24.8,
+    "P25-50": 25.4,
     "P50-75": 23.1,
-    "P75-95": 18.9,
+    "P75-95": 18.7,
     ">P95": 4.0
    },
    "cobertura_90": 92.0,
-   "cobertura_50": 48.4,
-   "error_calibracion": 9.8,
-   "pinball": 7.772,
+   "cobertura_50": 48.5,
+   "error_calibracion": 10.3,
+   "pinball": 7.757,
    "cobertura_90_por_hora": [
     92.5,
     93.0,
@@ -43,19 +43,19 @@
   "v2_todo": {
    "bandas_pct": {
     "<P5": 4.4,
-    "P5-25": 23.9,
-    "P25-50": 25.7,
-    "P50-75": 22.8,
-    "P75-95": 19.1,
+    "P5-25": 24.0,
+    "P25-50": 25.9,
+    "P50-75": 22.7,
+    "P75-95": 18.9,
     ">P95": 4.1
    },
    "cobertura_90": 91.5,
-   "cobertura_50": 48.5,
-   "error_calibracion": 9.2,
-   "pinball": 7.773,
+   "cobertura_50": 48.6,
+   "error_calibracion": 9.8,
+   "pinball": 7.759,
    "cobertura_90_por_hora": [
-    90.0,
-    91.4,
+    90.1,
+    91.3,
     90.9,
     90.0,
     90.2,
@@ -68,7 +68,7 @@
     90.0,
     90.7,
     90.2,
-    90.5,
+    90.6,
     90.4,
     90.7,
     91.3,
@@ -85,16 +85,16 @@
   "v1": {
    "bandas_pct": {
     "<P5": 5.0,
-    "P5-25": 21.0,
-    "P25-50": 24.1,
-    "P50-75": 26.1,
-    "P75-95": 17.6,
+    "P5-25": 21.6,
+    "P25-50": 24.6,
+    "P50-75": 25.5,
+    "P75-95": 17.1,
     ">P95": 6.2
    },
    "cobertura_90": 88.8,
    "cobertura_50": 50.1,
    "error_calibracion": 6.5,
-   "pinball": 8.575,
+   "pinball": 8.603,
    "cobertura_90_por_hora": [
     95.0,
     94.4,
@@ -125,19 +125,19 @@
   "v2_todo": {
    "bandas_pct": {
     "<P5": 6.2,
-    "P5-25": 19.9,
-    "P25-50": 24.4,
-    "P50-75": 26.1,
-    "P75-95": 17.1,
+    "P5-25": 20.4,
+    "P25-50": 24.9,
+    "P50-75": 25.5,
+    "P75-95": 16.5,
     ">P95": 6.4
    },
    "cobertura_90": 87.4,
    "cobertura_50": 50.4,
-   "error_calibracion": 7.3,
-   "pinball": 8.569,
+   "error_calibracion": 7.1,
+   "pinball": 8.598,
    "cobertura_90_por_hora": [
     91.9,
-    92.2,
+    91.9,
     93.6,
     89.4,
     89.4,
@@ -164,7 +164,7 @@
   }
  },
  "direccion": {
-  "logistica_acierto_pct": 52.0,
+  "logistica_acierto_pct": 52.2,
   "nota": "acierto de la mediana del cono en la dirección a 24 h"
  },
  "precio_exacto": {
@@ -179,5 +179,5 @@
  "horizonte_dias": 1,
  "horizonte_texto": "24 horas",
  "n_ventanas": 1457,
- "hasta": "2026-10-22 10:00:00"
+ "hasta": "2026-10-23 10:00:00"
 }
