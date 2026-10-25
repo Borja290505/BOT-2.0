@@ -5,18 +5,18 @@
     "<P5": 4.0,
     "P5-25": 24.8,
     "P25-50": 25.4,
-    "P50-75": 23.1,
-    "P75-95": 18.7,
+    "P50-75": 23.2,
+    "P75-95": 18.5,
     ">P95": 4.0
    },
    "cobertura_90": 92.0,
-   "cobertura_50": 48.5,
-   "error_calibracion": 10.3,
-   "pinball": 7.757,
+   "cobertura_50": 48.6,
+   "error_calibracion": 10.5,
+   "pinball": 7.743,
    "cobertura_90_por_hora": [
     92.5,
     93.0,
-    91.4,
+    91.5,
     89.9,
     89.6,
     90.5,
@@ -43,23 +43,23 @@
   "v2_todo": {
    "bandas_pct": {
     "<P5": 4.4,
-    "P5-25": 24.0,
+    "P5-25": 24.1,
     "P25-50": 25.9,
-    "P50-75": 22.7,
-    "P75-95": 18.9,
+    "P50-75": 22.9,
+    "P75-95": 18.7,
     ">P95": 4.1
    },
    "cobertura_90": 91.5,
-   "cobertura_50": 48.6,
-   "error_calibracion": 9.8,
-   "pinball": 7.759,
+   "cobertura_50": 48.7,
+   "error_calibracion": 9.9,
+   "pinball": 7.744,
    "cobertura_90_por_hora": [
     90.1,
     91.3,
-    90.9,
+    91.0,
     90.0,
     90.2,
-    89.7,
+    89.8,
     90.5,
     90.3,
     90.4,
@@ -84,17 +84,17 @@
  "desde últimos 90 días": {
   "v1": {
    "bandas_pct": {
-    "<P5": 5.0,
-    "P5-25": 21.6,
-    "P25-50": 24.6,
-    "P50-75": 25.5,
-    "P75-95": 17.1,
+    "<P5": 4.5,
+    "P5-25": 21.8,
+    "P25-50": 24.4,
+    "P50-75": 25.8,
+    "P75-95": 17.4,
     ">P95": 6.2
    },
-   "cobertura_90": 88.8,
+   "cobertura_90": 89.4,
    "cobertura_50": 50.1,
-   "error_calibracion": 6.5,
-   "pinball": 8.603,
+   "error_calibracion": 7.6,
+   "pinball": 8.554,
    "cobertura_90_por_hora": [
     95.0,
     94.4,
@@ -113,28 +113,28 @@
     90.5,
     91.0,
     90.2,
-    91.3,
-    91.3,
-    90.2,
+    91.6,
+    91.6,
     90.5,
-    89.9,
-    88.8,
-    88.8
+    90.8,
+    90.2,
+    89.1,
+    89.4
    ]
   },
   "v2_todo": {
    "bandas_pct": {
-    "<P5": 6.2,
-    "P5-25": 20.4,
-    "P25-50": 24.9,
-    "P50-75": 25.5,
-    "P75-95": 16.5,
+    "<P5": 5.6,
+    "P5-25": 20.7,
+    "P25-50": 24.6,
+    "P50-75": 25.8,
+    "P75-95": 16.8,
     ">P95": 6.4
    },
-   "cobertura_90": 87.4,
+   "cobertura_90": 88.0,
    "cobertura_50": 50.4,
    "error_calibracion": 7.1,
-   "pinball": 8.598,
+   "pinball": 8.548,
    "cobertura_90_por_hora": [
     91.9,
     91.9,
@@ -153,24 +153,24 @@
     90.2,
     90.8,
     90.2,
-    91.0,
-    91.0,
-    89.1,
-    90.5,
+    91.3,
+    91.3,
     89.4,
-    88.2,
-    87.4
+    90.8,
+    89.6,
+    88.5,
+    88.0
    ]
   }
  },
  "direccion": {
-  "logistica_acierto_pct": 52.2,
+  "logistica_acierto_pct": 52.1,
   "nota": "acierto de la mediana del cono en la dirección a 24 h"
  },
  "precio_exacto": {
-  "error_medio_mediana_pct": 2.36,
-  "error_medio_sin_cambio_pct": 2.36,
-  "acierto_±1%_pct": 33.2
+  "error_medio_mediana_pct": 2.35,
+  "error_medio_sin_cambio_pct": 2.35,
+  "acierto_±1%_pct": 33.4
  },
  "nombres": {
   "v1": "sin ajuste horario",
@@ -179,5 +179,5 @@
  "horizonte_dias": 1,
  "horizonte_texto": "24 horas",
  "n_ventanas": 1457,
- "hasta": "2026-10-23 10:00:00"
+ "hasta": "2026-10-24 10:00:00"
 }
