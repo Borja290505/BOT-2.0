@@ -10,15 +10,15 @@
     ">P95": 4.1
    },
    "cobertura_90": 91.1,
-   "cobertura_50": 51.0,
+   "cobertura_50": 51.1,
    "error_calibracion": 8.7,
-   "pinball": 7.681,
+   "pinball": 7.679,
    "cobertura_90_por_hora": [
     90.9,
-    89.5,
-    89.1,
+    89.6,
+    89.2,
     90.3,
-    90.5,
+    90.6,
     90.7,
     90.3,
     89.2,
@@ -45,20 +45,20 @@
     "<P5": 4.7,
     "P5-25": 23.5,
     "P25-50": 25.5,
-    "P50-75": 25.1,
+    "P50-75": 25.2,
     "P75-95": 17.0,
     ">P95": 4.1
    },
    "cobertura_90": 91.2,
    "cobertura_50": 50.7,
    "error_calibracion": 8.4,
-   "pinball": 7.686,
+   "pinball": 7.683,
    "cobertura_90_por_hora": [
-    92.3,
+    92.4,
     91.4,
-    90.4,
-    90.3,
     90.5,
+    90.4,
+    90.6,
     89.9,
     90.4,
     89.6,
@@ -85,18 +85,18 @@
   "v1": {
    "bandas_pct": {
     "<P5": 5.0,
-    "P5-25": 21.0,
+    "P5-25": 20.7,
     "P25-50": 23.2,
-    "P50-75": 30.0,
+    "P50-75": 30.3,
     "P75-95": 14.6,
     ">P95": 6.2
    },
    "cobertura_90": 88.8,
-   "cobertura_50": 53.2,
+   "cobertura_50": 53.5,
    "error_calibracion": 14.4,
-   "pinball": 8.405,
+   "pinball": 8.408,
    "cobertura_90_por_hora": [
-    91.0,
+    90.8,
     88.0,
     88.0,
     88.5,
@@ -125,16 +125,16 @@
   "v2_todo": {
    "bandas_pct": {
     "<P5": 4.8,
-    "P5-25": 20.7,
+    "P5-25": 20.4,
     "P25-50": 24.1,
-    "P50-75": 28.3,
+    "P50-75": 28.6,
     "P75-95": 16.2,
     ">P95": 5.9
    },
    "cobertura_90": 89.4,
-   "cobertura_50": 52.4,
+   "cobertura_50": 52.7,
    "error_calibracion": 9.8,
-   "pinball": 8.401,
+   "pinball": 8.403,
    "cobertura_90_por_hora": [
     92.7,
     91.0,
@@ -164,13 +164,13 @@
   }
  },
  "direccion": {
-  "logistica_acierto_pct": 51.1,
+  "logistica_acierto_pct": 51.3,
   "nota": "acierto de la mediana del cono en la dirección a 24 h"
  },
  "precio_exacto": {
   "error_medio_mediana_pct": 2.32,
   "error_medio_sin_cambio_pct": 2.32,
-  "acierto_±1%_pct": 35.0
+  "acierto_±1%_pct": 35.1
  },
  "nombres": {
   "v1": "sin ajuste horario",
@@ -179,5 +179,5 @@
  "horizonte_dias": 1,
  "horizonte_texto": "24 horas",
  "n_ventanas": 1457,
- "hasta": "2026-10-27 12:00:00"
+ "hasta": "2026-10-28 12:00:00"
 }
